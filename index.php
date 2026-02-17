@@ -6890,10 +6890,16 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 		                        <div class="hero-media" aria-label="MAGX robot video">
 		                            <div class="hero-media-card">
 		                                <video class="hero-robot-video smooth-loop-video" autoplay muted playsinline preload="auto" data-overlap="0.8" poster="logomagx.png">
-		                                    <?php if (file_exists('robotwhole.MP4')): ?>
-		                                    <source src="robotwhole.MP4" type="video/mp4">
-		                                    <?php elseif (file_exists('robotwhole.mp4')): ?>
-		                                    <source src="robotwhole.mp4" type="video/mp4">
+		                                    <?php
+		                                    $robotVideoSrc = '';
+		                                    if (file_exists(__DIR__ . '/robotwhole.MP4')) {
+		                                        $robotVideoSrc = 'robotwhole.MP4';
+		                                    } elseif (file_exists(__DIR__ . '/robotwhole.mp4')) {
+		                                        $robotVideoSrc = 'robotwhole.mp4';
+		                                    }
+		                                    if ($robotVideoSrc !== ''):
+		                                    ?>
+		                                    <source src="<?php echo htmlspecialchars($robotVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
 		                                    <?php endif; ?>
 		                                </video>
 		                                <svg class="hero-neon-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
