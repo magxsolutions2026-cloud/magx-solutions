@@ -16,12 +16,30 @@ if (!function_exists('magx_send_security_headers')) {
 if (!function_exists('magx_db_connect')) {
     function magx_db_connect(?string $dbName = null)
     {
+        $databaseUrl = getenv('DATABASE_URL') ?: getenv('SUPABASE_DB_URL') ?: '';
+
         $host = getenv('DB_HOST') ?: getenv('SUPABASE_DB_HOST') ?: '';
         $port = getenv('DB_PORT') ?: getenv('SUPABASE_DB_PORT') ?: '5432';
         $user = getenv('DB_USER') ?: getenv('SUPABASE_DB_USER') ?: '';
         $pass = getenv('DB_PASS') ?: getenv('SUPABASE_DB_PASSWORD') ?: '';
         $name = $dbName ?: (getenv('DB_NAME') ?: getenv('SUPABASE_DB_NAME') ?: 'postgres');
         $sslmode = getenv('DB_SSLMODE') ?: getenv('SUPABASE_DB_SSLMODE') ?: 'require';
+
+        if ($databaseUrl !== '') {
+            $parsed = @parse_url($databaseUrl);
+            if (is_array($parsed)) {
+                $host = (string)($parsed['host'] ?? $host);
+                $port = (string)($parsed['port'] ?? $port);
+                $user = isset($parsed['user']) ? rawurldecode((string)$parsed['user']) : $user;
+                $pass = isset($parsed['pass']) ? rawurldecode((string)$parsed['pass']) : $pass;
+                if (!empty($parsed['path'])) {
+                    $urlDb = ltrim((string)$parsed['path'], '/');
+                    if ($urlDb !== '') {
+                        $name = $dbName ?: $urlDb;
+                    }
+                }
+            }
+        }
 
         if ($host === '' || $user === '') {
             return null;
@@ -36,6 +54,7 @@ if (!function_exists('magx_db_connect')) {
             ]);
             return $pdo;
         } catch (Throwable $e) {
+            error_log('MAGX DB connect failed: ' . $e->getMessage());
             return null;
         }
     }
