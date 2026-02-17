@@ -697,6 +697,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
             object-fit: cover; /* like background-size: cover */
             transform: translate(-50%, -50%);
             z-index: -1; /* behind content */
+            pointer-events: none;
         }
         
         #bodycontainer > * {
@@ -6878,10 +6879,10 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 
 
 
-        <div id="bodycontainer">
-            <video autoplay muted loop playsinline preload="auto">
-                <source src="vidbg.mp4" type="video/mp4">
-            </video>
+	        <div id="bodycontainer">
+	            <video class="magx-bg-video magx-lock-video" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nofullscreen noremoteplayback nodownload" oncontextmenu="return false;">
+	                <source src="vidbg.mp4" type="video/mp4">
+	            </video>
 
             <!-- Home -->
 		            <div id="title" class="section home" >
@@ -6889,7 +6890,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 		                    <div class="hero-grid">
 		                        <div class="hero-media" aria-label="MAGX robot video">
 		                            <div class="hero-media-card">
-		                                <video class="hero-robot-video smooth-loop-video" autoplay muted playsinline preload="auto" data-overlap="0.8" poster="logomagx.png">
+		                                <video class="hero-robot-video smooth-loop-video magx-lock-video" autoplay muted playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nofullscreen noremoteplayback nodownload" oncontextmenu="return false;" data-overlap="0.8" poster="logomagx.png">
 		                                    <?php
 		                                    $robotVideoSrc = '';
 		                                    if (file_exists(__DIR__ . '/robotwhole.MP4')) {
@@ -7666,10 +7667,61 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			            $('.year').text(new Date().getFullYear());
 
 			            // Ensure the neon title overlay always matches the visible title text.
-			            $(".hero-title").each(function(){
-			                const t = String($(this).text() || "").trim();
-			                if(t){ this.setAttribute("data-text", t); }
-			            });
+				            $(".hero-title").each(function(){
+				                const t = String($(this).text() || "").trim();
+				                if(t){ this.setAttribute("data-text", t); }
+				            });
+
+				            function enforceLockedAutoplay(videoEl){
+				                if (!videoEl || videoEl.dataset.lockAutoplayInit === "1") { return; }
+				                videoEl.dataset.lockAutoplayInit = "1";
+				                videoEl.muted = true;
+				                videoEl.defaultMuted = true;
+				                videoEl.playsInline = true;
+				                videoEl.setAttribute("muted", "");
+				                videoEl.setAttribute("playsinline", "");
+				                videoEl.setAttribute("webkit-playsinline", "");
+				                videoEl.setAttribute("disablePictureInPicture", "");
+				                videoEl.setAttribute("disableRemotePlayback", "");
+				                videoEl.controls = false;
+
+				                function replay(){
+				                    try {
+				                        const p = videoEl.play();
+				                        if (p && typeof p.catch === "function") { p.catch(function(){}); }
+				                    } catch (e) {}
+				                }
+
+				                videoEl.addEventListener("pause", function(e){
+				                    if (e && e.isTrusted) {
+				                        e.preventDefault();
+				                    }
+				                    replay();
+				                });
+				                videoEl.addEventListener("ended", function(e){
+				                    if (e && e.isTrusted) {
+				                        e.preventDefault();
+				                    }
+				                    try { videoEl.currentTime = 0; } catch (err) {}
+				                    replay();
+				                });
+				                videoEl.addEventListener("loadedmetadata", replay);
+				                videoEl.addEventListener("canplay", replay);
+				                videoEl.addEventListener("suspend", replay);
+				                videoEl.addEventListener("stalled", replay);
+				                videoEl.addEventListener("waiting", replay);
+
+				                ["touchstart", "pointerdown", "click"].forEach(function(evt){
+				                    videoEl.addEventListener(evt, function(e){
+				                        if (e && typeof e.preventDefault === "function") {
+				                            e.preventDefault();
+				                        }
+				                        replay();
+				                    }, { passive: false });
+				                });
+
+				                replay();
+				            }
 
 			            function initSmoothLoopVideo(videoEl){
 			                if(!videoEl || videoEl.dataset.smoothLoopInit === "1"){ return; }
@@ -7681,10 +7733,12 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			                const enableAudioCrossfade = String(videoEl.dataset.audioCrossfade || "").toLowerCase() === "true";
 			                const sourceVolume = Number.isFinite(videoEl.volume) ? videoEl.volume : 1;
 
-			                const parent = videoEl.parentElement;
-			                const blendEl = videoEl.cloneNode(true);
-			                blendEl.removeAttribute("loop");
-			                blendEl.removeAttribute("controls");
+				                enforceLockedAutoplay(videoEl);
+				                const parent = videoEl.parentElement;
+				                const blendEl = videoEl.cloneNode(true);
+				                enforceLockedAutoplay(blendEl);
+				                blendEl.removeAttribute("loop");
+				                blendEl.removeAttribute("controls");
 			                blendEl.setAttribute("aria-hidden", "true");
 			                blendEl.style.opacity = "0";
 			                blendEl.style.pointerEvents = "none";
@@ -7834,7 +7888,19 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			                }
 			            }
 
-			            document.querySelectorAll("video.smooth-loop-video").forEach(initSmoothLoopVideo);
+				            document.querySelectorAll("video.smooth-loop-video").forEach(initSmoothLoopVideo);
+				            document.querySelectorAll("video.magx-lock-video").forEach(enforceLockedAutoplay);
+				            ["touchstart", "click", "visibilitychange", "pageshow"].forEach(function(evt){
+				                document.addEventListener(evt, function(){
+				                    if (evt === "visibilitychange" && document.visibilityState !== "visible") { return; }
+				                    document.querySelectorAll("video.magx-lock-video").forEach(function(v){
+				                        try {
+				                            const p = v.play();
+				                            if (p && typeof p.catch === "function") { p.catch(function(){}); }
+				                        } catch (e) {}
+				                    });
+				                }, { passive: true });
+				            });
 
 			            // Keep the neon frame path radius aligned with the card border-radius.
 			            function syncHeroNeonRadius(){
