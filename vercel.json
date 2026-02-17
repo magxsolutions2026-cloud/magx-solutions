@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "api/*.php": {
+      "runtime": "vercel-php@0.9.0"
+    }
+  },
+  "routes": [
+    { "src": "^/$", "dest": "/api/index.php" },
+    { "src": "^/index\\.php$", "dest": "/api/index.php" },
+    { "src": "^/admain\\.php$", "dest": "/api/admain.php" },
+    { "src": "^/adminfunction\\.php$", "dest": "/api/adminfunction.php" },
+    { "src": "^/home_posts_api\\.php$", "dest": "/api/home_posts_api.php" },
+    { "src": "^/services_api\\.php$", "dest": "/api/services_api.php" },
+    { "src": "^/contact_api\\.php$", "dest": "/api/contact_api.php" },
+    { "src": "^/footer_contact_api\\.php$", "dest": "/api/footer_contact_api.php" },
+    { "src": "^/portfolio_api\\.php$", "dest": "/api/portfolio_api.php" },
+    { "src": "^/(?!api/).+\\.php$", "status": 404 },
+    { "handle": "filesystem" },
+    { "src": "^/(.*)$", "dest": "/api/index.php" }
+  ]
+}

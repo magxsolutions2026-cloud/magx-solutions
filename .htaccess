@@ -1,0 +1,22 @@
+#
+# Ensure correct MIME type for MP4 so HTML5 <video> plays reliably.
+#
+AddType video/mp4 .mp4
+
+# Basic hardening
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Block direct access to sensitive build/dev/database artifacts
+<FilesMatch "(^\.|composer\.(json|lock)|.*\.(sql|log|bak|sh|ini|dist))$">
+    Require all denied
+</FilesMatch>
+
+<Files "app_bootstrap.php">
+    Require all denied
+</Files>

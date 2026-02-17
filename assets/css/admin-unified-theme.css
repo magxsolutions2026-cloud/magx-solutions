@@ -1,0 +1,216 @@
+/* MAGX Admin Unified Theme (2026) */
+:root{
+    --adm-bg-1: #041124;
+    --adm-bg-2: #071a39;
+    --adm-bg-3: #06152d;
+    --adm-panel: rgba(255,255,255,0.08);
+    --adm-panel-2: rgba(255,255,255,0.04);
+    --adm-border: rgba(95,210,255,0.26);
+    --adm-border-strong: rgba(95,210,255,0.42);
+    --adm-text: #ecf7ff;
+    --adm-sub: rgba(213,236,255,0.84);
+    --adm-primary: #0066cc;
+    --adm-accent: #00aaff;
+    --adm-shadow: 0 22px 60px rgba(0,0,0,0.38);
+}
+
+html, body{
+    background:
+        radial-gradient(760px 360px at 88% -8%, rgba(0,170,255,0.20), transparent 62%),
+        radial-gradient(560px 280px at 8% 102%, rgba(0,92,190,0.20), transparent 68%),
+        linear-gradient(180deg, var(--adm-bg-1), var(--adm-bg-2) 48%, var(--adm-bg-3)) !important;
+    color: var(--adm-text) !important;
+    font-family: "Inter","Poppins",system-ui,sans-serif !important;
+}
+
+header,
+.navbar,
+.navbar2,
+.crud-nav,
+.crud-nav-2{
+    background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)) !important;
+    border: 1px solid var(--adm-border) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), var(--adm-shadow) !important;
+    color: var(--adm-text) !important;
+}
+
+h1, h2, h3, h4, h5, h6, label, .form-label{
+    color: var(--adm-text) !important;
+}
+p, small, .text-muted, .form-text{
+    color: var(--adm-sub) !important;
+}
+
+.sidenav{
+    background:
+        radial-gradient(520px 240px at 85% -10%, rgba(0,170,255,0.26), transparent 62%),
+        radial-gradient(420px 220px at 0% 100%, rgba(0,92,190,0.30), transparent 70%),
+        linear-gradient(180deg, rgba(6,22,52,0.97), rgba(4,12,30,0.97)) !important;
+    border-left: 1px solid var(--adm-border) !important;
+    box-shadow: -20px 0 46px rgba(0,0,0,0.38) !important;
+}
+
+.card,
+.panel,
+.box,
+.stock-panel,
+.table-responsive,
+.modal-content,
+#developer,
+#maincon,
+#content,
+#container{
+    background: linear-gradient(160deg, var(--adm-panel), var(--adm-panel-2)) !important;
+    border: 1px solid var(--adm-border) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), var(--adm-shadow) !important;
+    color: var(--adm-text) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.table,
+table{
+    color: var(--adm-text) !important;
+    border-color: rgba(95,210,255,0.22) !important;
+}
+.table th,
+.table td,
+table th,
+table td{
+    border-color: rgba(95,210,255,0.20) !important;
+}
+.table thead th{
+    background: linear-gradient(135deg, rgba(0,102,204,0.28), rgba(0,170,255,0.18)) !important;
+    color: #eaf6ff !important;
+}
+
+.btn,
+button,
+input[type="submit"],
+input[type="button"]{
+    border-radius: 12px !important;
+}
+.btn-primary,
+.btn-success,
+.btn-info{
+    background: linear-gradient(135deg, var(--adm-primary), var(--adm-accent)) !important;
+    border-color: rgba(255,255,255,0.16) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 26px rgba(0,120,255,0.30) !important;
+}
+.btn-primary:hover,
+.btn-success:hover,
+.btn-info:hover{
+    box-shadow: 0 16px 34px rgba(0,140,255,0.34) !important;
+    border-color: var(--adm-border-strong) !important;
+}
+.btn-secondary,
+.btn-light{
+    background: linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08)) !important;
+    border-color: var(--adm-border) !important;
+    color: #dbf1ff !important;
+}
+.btn-danger{
+    background: linear-gradient(135deg, #9f2f3f, #de4e67) !important;
+    border-color: rgba(255,255,255,0.16) !important;
+}
+
+.form-control,
+.form-select,
+input[type="text"],
+input[type="number"],
+input[type="password"],
+textarea,
+select{
+    background: linear-gradient(150deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06)) !important;
+    border: 1px solid var(--adm-border) !important;
+    color: var(--adm-text) !important;
+}
+.form-control:focus,
+.form-select:focus,
+input:focus,
+textarea:focus,
+select:focus{
+    border-color: var(--adm-border-strong) !important;
+    box-shadow: 0 0 0 3px rgba(95,210,255,0.18) !important;
+}
+.form-control::placeholder,
+textarea::placeholder{
+    color: rgba(208,233,252,0.65) !important;
+}
+
+.dropdown-menu{
+    background: linear-gradient(160deg, rgba(6,22,52,0.95), rgba(4,12,30,0.95)) !important;
+    border: 1px solid var(--adm-border) !important;
+    box-shadow: var(--adm-shadow) !important;
+}
+.dropdown-item{
+    color: var(--adm-sub) !important;
+}
+.dropdown-item:hover{
+    background: linear-gradient(135deg, rgba(0,102,204,0.30), rgba(0,170,255,0.24)) !important;
+    color: #ecf7ff !important;
+}
+
+.modal-header{
+    background: radial-gradient(1000px 360px at 10% 0%, rgba(0,170,255,0.28), transparent 56%),
+                radial-gradient(800px 300px at 90% 0%, rgba(0,102,204,0.22), transparent 56%) !important;
+    border-bottom: 1px solid rgba(95,210,255,0.22) !important;
+}
+.modal-footer{
+    border-top: 1px solid rgba(95,210,255,0.22) !important;
+}
+
+::-webkit-scrollbar{ width: 10px; height: 10px; }
+::-webkit-scrollbar-track{ background: rgba(255,255,255,0.08); }
+::-webkit-scrollbar-thumb{
+    background: linear-gradient(180deg, var(--adm-primary), var(--adm-accent));
+    border-radius: 999px;
+}
+
+/* Force-replace legacy inline maroon styles used across admin pages */
+button.btn[style*="#672222"],
+button.btn[style*="#8c2f2f"],
+input.btn[style*="#672222"],
+input.btn[style*="#8c2f2f"],
+.btn-sm[style*="#672222"],
+.btn-sm[style*="#8c2f2f"]{
+    background: linear-gradient(135deg, var(--adm-primary), var(--adm-accent)) !important;
+    border-color: rgba(255,255,255,0.16) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 26px rgba(0,120,255,0.30) !important;
+}
+
+.modal-header[style*="#672222"],
+.modal-header[style*="#8c2f2f"]{
+    background: radial-gradient(1000px 360px at 10% 0%, rgba(0,170,255,0.28), transparent 56%),
+                radial-gradient(800px 300px at 90% 0%, rgba(0,102,204,0.22), transparent 56%) !important;
+    color: #eef8ff !important;
+}
+
+h3[style*="#672222"],
+h4[style*="#672222"],
+h5[style*="#672222"]{
+    color: #eef8ff !important;
+}
+
+label[style*="#672222"],
+label[style*="#8c2f2f"]{
+    color: #d8efff !important;
+}
+
+a.dropdown-item[style*="#672222"],
+a.dropdown-item[style*="#8c2f2f"]{
+    color: var(--adm-sub) !important;
+}
+
+hr[style*="#672222"],
+hr[style*="#8c2f2f"]{
+    background: linear-gradient(90deg, var(--adm-primary), var(--adm-accent)) !important;
+    opacity: 1 !important;
+}
+
+img[style*="border: 3px solid #672222"],
+img[style*="border:3px solid #672222"]{
+    border-color: rgba(95,210,255,0.44) !important;
+}
