@@ -6,12 +6,27 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 require_once __DIR__ . '/app_bootstrap.php';
 magx_send_security_headers();
 
+$csrfCookie = isset($_COOKIE['magx_csrf']) ? (string)$_COOKIE['magx_csrf'] : '';
 if (empty($_SESSION['magx_csrf'])) {
-    try {
-        $_SESSION['magx_csrf'] = bin2hex(random_bytes(24));
-    } catch (Exception $e) {
-        $_SESSION['magx_csrf'] = bin2hex(pack('d', microtime(true)));
+    if ($csrfCookie !== '') {
+        $_SESSION['magx_csrf'] = $csrfCookie;
+    } else {
+        try {
+            $_SESSION['magx_csrf'] = bin2hex(random_bytes(24));
+        } catch (Exception $e) {
+            $_SESSION['magx_csrf'] = bin2hex(pack('d', microtime(true)));
+        }
     }
+}
+$csrfSession = (string)($_SESSION['magx_csrf'] ?? '');
+if ($csrfSession !== '' && $csrfCookie !== $csrfSession) {
+    setcookie('magx_csrf', $csrfSession, [
+        'expires' => time() + (60 * 60 * 12),
+        'path' => '/',
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
 }
 
 require_once 'home_posts_functions.php';
