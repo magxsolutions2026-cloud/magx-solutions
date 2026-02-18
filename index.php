@@ -2765,6 +2765,11 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
             
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
+
+        /* Footer-safe spacing variable for mobile scroll containers */
+        :root{
+            --magx-footer-safe-space: 76px;
+        }
         
         
 
@@ -3337,6 +3342,15 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
         }
 
 	        @media (max-width: 576px) {
+            /* Prevent fixed footer from covering the end of section content */
+            #title,
+            #aboutcon,
+            #servicescon,
+            #contactcontainer{
+                padding-bottom: calc(var(--magx-footer-safe-space) + env(safe-area-inset-bottom, 0px)) !important;
+                scroll-padding-bottom: calc(var(--magx-footer-safe-space) + env(safe-area-inset-bottom, 0px));
+            }
+
             /* Tighter spacing on very small screens */
             #btnnav .bt { 
                 padding-top: 8px;
