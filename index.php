@@ -221,6 +221,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
         clearLoginAttempts($adminuser, 'admin');
         $_SESSION['magx_admin_authenticated'] = true;
         $_SESSION['adminuser'] = $adminuser;
+        magx_issue_admin_cookie($adminuser);
 
         // Log the login (same table used by the legacy Main.php flow).
         date_default_timezone_set('Asia/Manila');

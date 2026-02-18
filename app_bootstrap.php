@@ -13,6 +13,76 @@ if (!function_exists('magx_send_security_headers')) {
     }
 }
 
+if (!function_exists('magx_signing_secret')) {
+    function magx_signing_secret(): string
+    {
+        $secret = (string)(getenv('APP_KEY') ?: getenv('MAGX_APP_KEY') ?: getenv('DB_PASS') ?: getenv('SUPABASE_DB_PASSWORD') ?: '');
+        if ($secret === '') {
+            // Dev fallback only; set APP_KEY in production for stronger signing.
+            $secret = 'magx-default-signing-key-change-me';
+        }
+        return $secret;
+    }
+}
+
+if (!function_exists('magx_issue_admin_cookie')) {
+    function magx_issue_admin_cookie(string $username): void
+    {
+        if ($username === '') {
+            return;
+        }
+        $exp = time() + (60 * 60 * 12); // 12 hours
+        $payload = base64_encode(json_encode(['u' => $username, 'e' => $exp], JSON_UNESCAPED_SLASHES));
+        $sig = hash_hmac('sha256', $payload, magx_signing_secret());
+        $value = $payload . '.' . $sig;
+        setcookie('magx_admin_auth', $value, [
+            'expires' => $exp,
+            'path' => '/',
+            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+}
+
+if (!function_exists('magx_read_admin_cookie')) {
+    function magx_read_admin_cookie(): ?string
+    {
+        $raw = (string)($_COOKIE['magx_admin_auth'] ?? '');
+        if ($raw === '' || strpos($raw, '.') === false) {
+            return null;
+        }
+        [$payload, $sig] = explode('.', $raw, 2);
+        $expected = hash_hmac('sha256', $payload, magx_signing_secret());
+        if (!hash_equals($expected, (string)$sig)) {
+            return null;
+        }
+        $decoded = json_decode((string)base64_decode($payload, true), true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+        $exp = (int)($decoded['e'] ?? 0);
+        $username = trim((string)($decoded['u'] ?? ''));
+        if ($username === '' || $exp <= time()) {
+            return null;
+        }
+        return $username;
+    }
+}
+
+if (!function_exists('magx_clear_admin_cookie')) {
+    function magx_clear_admin_cookie(): void
+    {
+        setcookie('magx_admin_auth', '', [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+}
+
 if (!function_exists('magx_db_connect')) {
     function magx_db_connect(?string $dbName = null)
     {
@@ -93,9 +163,16 @@ if (!function_exists('magx_require_post_request')) {
 if (!function_exists('magx_is_admin_authenticated')) {
     function magx_is_admin_authenticated(): bool
     {
-        return !empty($_SESSION['magx_admin_authenticated'])
-            || !empty($_SESSION['adminuser'])
-            || !empty($_SESSION['username']);
+        if (!empty($_SESSION['magx_admin_authenticated']) || !empty($_SESSION['adminuser']) || !empty($_SESSION['username'])) {
+            return true;
+        }
+        $cookieUser = magx_read_admin_cookie();
+        if ($cookieUser !== null) {
+            $_SESSION['magx_admin_authenticated'] = true;
+            $_SESSION['adminuser'] = $cookieUser;
+            return true;
+        }
+        return false;
     }
 }
 

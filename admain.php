@@ -1,8 +1,9 @@
 <?php
+require_once __DIR__ . '/app_bootstrap.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
-if (empty($_SESSION['magx_admin_authenticated'])) {
+if (!magx_is_admin_authenticated()) {
     header('Location: /index.php', true, 303);
     exit;
 }

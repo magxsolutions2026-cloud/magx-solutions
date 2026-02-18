@@ -12,7 +12,7 @@ if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
     exit;
 }
 
-if (empty($_SESSION['magx_admin_authenticated'])) {
+if (!magx_is_admin_authenticated()) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Authentication required.';
@@ -127,4 +127,3 @@ if ($action === 'ADD_ADMIN_ACCOUNT') {
 
 header('Content-Type: text/plain; charset=utf-8');
 echo 'Invalid action';
-
