@@ -7723,17 +7723,39 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 				                replay();
 				            }
 
-			            function initSmoothLoopVideo(videoEl){
-			                if(!videoEl || videoEl.dataset.smoothLoopInit === "1"){ return; }
-			                videoEl.dataset.smoothLoopInit = "1";
-			                videoEl.removeAttribute("loop");
+				            function useLiteVideoLoopMode(){
+				                const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+				                const isSmallViewport = window.innerWidth <= 820;
+				                const touchDevice = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+				                const lowCpu = Number(navigator.hardwareConcurrency || 0) > 0 && Number(navigator.hardwareConcurrency || 0) <= 4;
+				                const lowMem = Number(navigator.deviceMemory || 0) > 0 && Number(navigator.deviceMemory || 0) <= 4;
+				                return reducedMotion || ((isSmallViewport || touchDevice) && (lowCpu || lowMem));
+				            }
+	
+				            function initSmoothLoopVideo(videoEl){
+				                if(!videoEl || videoEl.dataset.smoothLoopInit === "1"){ return; }
+				                videoEl.dataset.smoothLoopInit = "1";
+				                const liteMode = useLiteVideoLoopMode();
+				                enforceLockedAutoplay(videoEl);
+				                if (liteMode) {
+				                    // Keep quality the same, but use native loop on weaker phones.
+				                    videoEl.setAttribute("loop", "");
+				                    videoEl.loop = true;
+				                    videoEl.style.opacity = "1";
+				                    try {
+				                        const p = videoEl.play();
+				                        if (p && typeof p.catch === "function") { p.catch(function(){}); }
+				                    } catch (e) {}
+				                    return;
+				                }
+
+				                videoEl.removeAttribute("loop");
 
 			                const overlapRaw = parseFloat(videoEl.dataset.overlap || "0.8");
 			                const overlap = Math.min(1.5, Math.max(0.4, isFinite(overlapRaw) ? overlapRaw : 0.8));
 			                const enableAudioCrossfade = String(videoEl.dataset.audioCrossfade || "").toLowerCase() === "true";
 			                const sourceVolume = Number.isFinite(videoEl.volume) ? videoEl.volume : 1;
 
-				                enforceLockedAutoplay(videoEl);
 				                const parent = videoEl.parentElement;
 				                const blendEl = videoEl.cloneNode(true);
 				                enforceLockedAutoplay(blendEl);
