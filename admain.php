@@ -1286,6 +1286,12 @@ if (!magx_is_admin_authenticated()) {
         $("#existingBgVideo").val("");
     }
 
+    var MAGX_VERCEL_MAX_UPLOAD_BYTES = 4 * 1024 * 1024; // 4MB safe ceiling for Vercel serverless
+
+    function formatMb(bytes){
+        return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+    }
+
     // Save post (add or edit)
     $("#savePostBtn").click(function(){
         var postId = $("#postId").val();
@@ -1310,6 +1316,10 @@ if (!magx_is_admin_authenticated()) {
         
         // Handle icon image
         var iconFile = $("#postIconImage")[0].files[0];
+        if (iconFile && iconFile.size > MAGX_VERCEL_MAX_UPLOAD_BYTES) {
+            alert("Icon image is too large (" + formatMb(iconFile.size) + "). Max allowed on Vercel is 4 MB.");
+            return;
+        }
         if(iconFile) {
             formData.append('icon_image', iconFile);
         } else if($("#existingIconImage").val()) {
@@ -1318,6 +1328,10 @@ if (!magx_is_admin_authenticated()) {
         
         // Handle background image
         var bgFile = $("#postBgImage")[0].files[0];
+        if (bgFile && bgFile.size > MAGX_VERCEL_MAX_UPLOAD_BYTES) {
+            alert("Background image is too large (" + formatMb(bgFile.size) + "). Max allowed on Vercel is 4 MB.");
+            return;
+        }
         if(bgFile) {
             formData.append('background_image', bgFile);
         } else if($("#existingBgImage").val()) {
@@ -1326,6 +1340,10 @@ if (!magx_is_admin_authenticated()) {
 
         // Handle background video
         var vidFile = $("#postBgVideo")[0].files[0];
+        if (vidFile && vidFile.size > MAGX_VERCEL_MAX_UPLOAD_BYTES) {
+            alert("Background video is too large (" + formatMb(vidFile.size) + "). Max allowed on Vercel upload requests is 4 MB. Use a smaller/compressed file or external storage URL.");
+            return;
+        }
         if(vidFile) {
             formData.append('background_video', vidFile);
         } else if($("#existingBgVideo").val()) {

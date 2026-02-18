@@ -34,14 +34,20 @@ function hp_upload_media($file, string $kind, &$error = null, string $uploadDir 
         return null;
     }
 
-    $maxBytes = ($kind === 'video') ? (50 * 1024 * 1024) : (5 * 1024 * 1024);
+    // Vercel serverless request body limits are much smaller than local PHP limits.
+    $isVercel = !empty($_SERVER['VERCEL']) || getenv('VERCEL');
+    $maxBytes = ($kind === 'video')
+        ? ($isVercel ? (4 * 1024 * 1024) : (50 * 1024 * 1024))
+        : ($isVercel ? (4 * 1024 * 1024) : (5 * 1024 * 1024));
     $size = (int)($file['size'] ?? 0);
     if ($size <= 0) {
         $error = 'Uploaded file is empty.';
         return null;
     }
     if ($size > $maxBytes) {
-        $error = ($kind === 'video') ? 'Video too large (max 50MB).' : 'Image too large (max 5MB).';
+        $error = ($kind === 'video')
+            ? ('Video too large (max ' . ($isVercel ? '4MB on Vercel' : '50MB') . ').')
+            : ('Image too large (max ' . ($isVercel ? '4MB on Vercel' : '5MB') . ').');
         return null;
     }
 
