@@ -935,6 +935,10 @@ if (!magx_is_admin_authenticated()) {
 </html>
 
 <script>
+    const MAGX_SUPABASE_URL = <?php echo json_encode((string)(getenv('SUPABASE_URL') ?: '')); ?>;
+    const MAGX_SUPABASE_ANON_KEY = <?php echo json_encode((string)(getenv('SUPABASE_ANON_KEY') ?: '')); ?>;
+    const MAGX_HOME_POSTS_BUCKET = <?php echo json_encode((string)(getenv('SUPABASE_STORAGE_BUCKET_HOME_POSTS') ?: 'home-posts-media')); ?>;
+    const MAGX_SUPABASE_READY = !!(MAGX_SUPABASE_URL && MAGX_SUPABASE_ANON_KEY && MAGX_HOME_POSTS_BUCKET);
     $(document).ready(function(){
         $("#home_posts").show();
         $("#contacts_section").hide();
@@ -1155,6 +1159,12 @@ if (!magx_is_admin_authenticated()) {
 
     // Display home posts in table
     function displayHomePosts(posts) {
+        function resolveMediaUrl(v, fallbackPrefix){
+            v = String(v || "").trim();
+            if(!v){ return ""; }
+            if(/^https?:\/\//i.test(v) || /^data:/i.test(v) || v.indexOf("uploads/") === 0){ return v; }
+            return fallbackPrefix + v;
+        }
         var html = '<div class="logs-container">';
         html += '<table class="logs-table">';
         html += '<thead>';
@@ -1177,8 +1187,8 @@ if (!magx_is_admin_authenticated()) {
         } else {
             posts.forEach(function(post) {
                 var hasVideo = !!post.background_video;
-                var backgroundUrl = post.background_image ? (post.background_image.startsWith('uploads/') ? post.background_image : 'uploads/home_posts/' + post.background_image) : 'https://via.placeholder.com/50/672222/ffffff?text=BG';
-                var videoUrl = post.background_video ? (post.background_video.startsWith('uploads/') ? post.background_video : 'uploads/home_posts/' + post.background_video) : '';
+                var backgroundUrl = post.background_image ? resolveMediaUrl(post.background_image, 'uploads/home_posts/') : 'https://via.placeholder.com/50/672222/ffffff?text=BG';
+                var videoUrl = post.background_video ? resolveMediaUrl(post.background_video, 'uploads/home_posts/') : '';
                 var isActive = post.is_active == 1;
                 html += '<tr>';
                 html += '<td>' + post.display_order + '</td>';
@@ -1292,17 +1302,70 @@ if (!magx_is_admin_authenticated()) {
         return (bytes / (1024 * 1024)).toFixed(2) + " MB";
     }
 
+    function randomHex(len){
+        var out = "";
+        var chars = "abcdef0123456789";
+        for(var i = 0; i < len; i++){ out += chars.charAt(Math.floor(Math.random() * chars.length)); }
+        return out;
+    }
+
+    function buildSupabaseObjectPath(file){
+        var safeName = String((file && file.name) || "video.mp4").toLowerCase().replace(/[^a-z0-9._-]/g, "_");
+        var ext = "mp4";
+        if (safeName.lastIndexOf(".") > -1) {
+            ext = safeName.split(".").pop() || "mp4";
+        }
+        return "home_posts/" + Date.now() + "_" + randomHex(12) + "." + ext;
+    }
+
+    function encodeStoragePath(path){
+        return String(path || "").split("/").map(encodeURIComponent).join("/");
+    }
+
+    async function uploadVideoToSupabaseStorage(file){
+        if(!MAGX_SUPABASE_READY){
+            throw new Error("Supabase Storage is not configured (missing SUPABASE_URL/SUPABASE_ANON_KEY).");
+        }
+        var objectPath = buildSupabaseObjectPath(file);
+        var objectPathEncoded = encodeStoragePath(objectPath);
+        var bucketEncoded = encodeURIComponent(MAGX_HOME_POSTS_BUCKET);
+        var uploadUrl = MAGX_SUPABASE_URL.replace(/\/+$/, "") + "/storage/v1/object/" + bucketEncoded + "/" + objectPathEncoded;
+
+        var response = await fetch(uploadUrl, {
+            method: "POST",
+            headers: {
+                "apikey": MAGX_SUPABASE_ANON_KEY,
+                "Authorization": "Bearer " + MAGX_SUPABASE_ANON_KEY,
+                "x-upsert": "true",
+                "Content-Type": file.type || "application/octet-stream"
+            },
+            body: file
+        });
+
+        if(!response.ok){
+            var text = "";
+            try { text = await response.text(); } catch(e) {}
+            throw new Error("Supabase upload failed (" + response.status + "). " + (text || "Check Storage bucket policies."));
+        }
+
+        return MAGX_SUPABASE_URL.replace(/\/+$/, "") + "/storage/v1/object/public/" + bucketEncoded + "/" + objectPathEncoded;
+    }
+
     // Save post (add or edit)
-    $("#savePostBtn").click(function(){
+    $("#savePostBtn").click(async function(){
+        var $saveBtn = $("#savePostBtn");
+        if ($saveBtn.data("busy")) { return; }
+        $saveBtn.data("busy", 1).prop("disabled", true);
+
         var postId = $("#postId").val();
         var action = postId ? "EDIT" : "ADD";
-        
+
         if(!$("#postTitle").val() || !$("#postDescription").val()) {
             alert("Please fill in required fields!");
+            $saveBtn.data("busy", 0).prop("disabled", false);
             return;
         }
 
-        // Create FormData for file uploads
         var formData = new FormData();
         formData.append('action', action);
         formData.append('title', $("#postTitle").val());
@@ -1313,11 +1376,11 @@ if (!magx_is_admin_authenticated()) {
         formData.append('share_count', $("#postShareCount").val());
         formData.append('display_order', $("#postDisplayOrder").val());
         formData.append('is_active', $("#postIsActive").val());
-        
-        // Handle icon image
+
         var iconFile = $("#postIconImage")[0].files[0];
         if (iconFile && iconFile.size > MAGX_VERCEL_MAX_UPLOAD_BYTES) {
             alert("Icon image is too large (" + formatMb(iconFile.size) + "). Max allowed on Vercel is 4 MB.");
+            $saveBtn.data("busy", 0).prop("disabled", false);
             return;
         }
         if(iconFile) {
@@ -1325,11 +1388,11 @@ if (!magx_is_admin_authenticated()) {
         } else if($("#existingIconImage").val()) {
             formData.append('existing_icon_image', $("#existingIconImage").val());
         }
-        
-        // Handle background image
+
         var bgFile = $("#postBgImage")[0].files[0];
         if (bgFile && bgFile.size > MAGX_VERCEL_MAX_UPLOAD_BYTES) {
             alert("Background image is too large (" + formatMb(bgFile.size) + "). Max allowed on Vercel is 4 MB.");
+            $saveBtn.data("busy", 0).prop("disabled", false);
             return;
         }
         if(bgFile) {
@@ -1338,14 +1401,26 @@ if (!magx_is_admin_authenticated()) {
             formData.append('existing_background_image', $("#existingBgImage").val());
         }
 
-        // Handle background video
         var vidFile = $("#postBgVideo")[0].files[0];
-        if (vidFile && vidFile.size > MAGX_VERCEL_MAX_UPLOAD_BYTES) {
-            alert("Background video is too large (" + formatMb(vidFile.size) + "). Max allowed on Vercel upload requests is 4 MB. Use a smaller/compressed file or external storage URL.");
-            return;
-        }
         if(vidFile) {
-            formData.append('background_video', vidFile);
+            if (vidFile.size > MAGX_VERCEL_MAX_UPLOAD_BYTES) {
+                if(!MAGX_SUPABASE_READY){
+                    alert("Background video is " + formatMb(vidFile.size) + ". Configure Supabase Storage env vars to upload videos larger than 4 MB.");
+                    $saveBtn.data("busy", 0).prop("disabled", false);
+                    return;
+                }
+                $saveBtn.text("Uploading video...");
+                try {
+                    var uploadedUrl = await uploadVideoToSupabaseStorage(vidFile);
+                    formData.append('background_video_url', uploadedUrl);
+                } catch (uploadErr) {
+                    alert((uploadErr && uploadErr.message) ? uploadErr.message : "Video upload failed.");
+                    $saveBtn.data("busy", 0).prop("disabled", false).text("Save Post");
+                    return;
+                }
+            } else {
+                formData.append('background_video', vidFile);
+            }
         } else if($("#existingBgVideo").val()) {
             formData.append('existing_background_video', $("#existingBgVideo").val());
         }
@@ -1354,6 +1429,7 @@ if (!magx_is_admin_authenticated()) {
             formData.append('id', postId);
         }
 
+        $saveBtn.text("Saving...");
         $.ajax({
             url: "home_posts_api.php",
             method: "POST",
@@ -1375,6 +1451,7 @@ if (!magx_is_admin_authenticated()) {
                 } else {
                     alert("Error: " + response.message);
                 }
+                $saveBtn.data("busy", 0).prop("disabled", false).text("Save Post");
             },
             error: function(xhr) {
                 var msg = "Error saving post!";
@@ -1388,13 +1465,14 @@ if (!magx_is_admin_authenticated()) {
                         }
                     } catch (e) {
                         if (xhr.status === 413) {
-                            msg = "Error: Upload too large for serverless request. Try a smaller file.";
+                            msg = "Error: Upload too large for serverless request. Try a smaller file or Supabase Storage.";
                         }
                     }
                 } else if (xhr && xhr.status === 413) {
-                    msg = "Error: Upload too large for serverless request. Try a smaller file.";
+                    msg = "Error: Upload too large for serverless request. Try a smaller file or Supabase Storage.";
                 }
                 alert(msg);
+                $saveBtn.data("busy", 0).prop("disabled", false).text("Save Post");
             }
         });
     });
@@ -1419,10 +1497,9 @@ if (!magx_is_admin_authenticated()) {
                     $("#postDisplayOrder").val(post.display_order);
                     $("#postIsActive").val(post.is_active);
                     
-                    // Handle existing media (store only filename in hidden fields; use full URL for preview)
+                    // Handle existing media (store original value; use full URL for preview)
                     if(post.icon_image) {
-                        var iconName = String(post.icon_image).split('/').pop();
-                        $("#existingIconImage").val(iconName);
+                        $("#existingIconImage").val(String(post.icon_image));
                         $("#iconPreviewImg").attr('src', post.icon_image);
                         $("#iconImagePreview").show();
                     } else {
@@ -1431,8 +1508,7 @@ if (!magx_is_admin_authenticated()) {
                     }
                     
                     if(post.background_image) {
-                        var bgName = String(post.background_image).split('/').pop();
-                        $("#existingBgImage").val(bgName);
+                        $("#existingBgImage").val(String(post.background_image));
                         $("#bgPreviewImg").attr('src', post.background_image);
                         $("#bgImagePreview").show();
                     } else {
@@ -1441,8 +1517,7 @@ if (!magx_is_admin_authenticated()) {
                     }
 
                     if(post.background_video) {
-                        var vidName = String(post.background_video).split('/').pop();
-                        $("#existingBgVideo").val(vidName);
+                        $("#existingBgVideo").val(String(post.background_video));
                         $("#bgVideoPreviewEl").attr('src', post.background_video);
                         $("#bgVideoPreview").show();
                     } else {

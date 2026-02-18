@@ -98,6 +98,12 @@ function hp_media_public_url(?string $value): string {
     return 'uploads/home_posts/' . ltrim($v, '/');
 }
 
+function hp_is_valid_external_url(?string $value): bool {
+    $v = trim((string)$value);
+    if ($v === '') { return false; }
+    return (bool)filter_var($v, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $v);
+}
+
 function hp_remove_file(?string $filename): void {
     if (!$filename) { return; }
     $base = basename((string)$filename);
@@ -150,6 +156,14 @@ try {
             $vid = hp_upload_media($_FILES['background_video'] ?? null, 'video', $vidErr) ?: '';
             if ($vidErr && $vidErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$vidErr]); break; }
             if ($vidErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Background video upload skipped (server storage unavailable).'; }
+            $videoUrl = trim((string)($_POST['background_video_url'] ?? ''));
+            if ($videoUrl !== '') {
+                if (!hp_is_valid_external_url($videoUrl)) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid background video URL']);
+                    break;
+                }
+                $vid = $videoUrl;
+            }
 
             magx_db_execute($db, 'INSERT INTO tbl_home_posts (title, subtitle, description, icon_image, background_image, background_video, like_count, comment_count, share_count, display_order, is_active, date_created, date_updated) VALUES (:t,:s,:d,:i,:b,:v,:l,:c,:sh,:o,:a,NOW(),NOW())', [
                 ':t'=>$title, ':s'=>$subtitle, ':d'=>$description, ':i'=>$icon, ':b'=>$bg, ':v'=>$vid,
@@ -194,7 +208,16 @@ try {
             $newVid = hp_upload_media($_FILES['background_video'] ?? null, 'video', $vidErr);
             if ($vidErr && $vidErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$vidErr]); break; }
             if ($vidErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Background video upload skipped (server storage unavailable).'; }
+            $videoUrl = trim((string)($_POST['background_video_url'] ?? ''));
             if ($newVid) { hp_remove_file($vid); $vid = $newVid; }
+            elseif ($videoUrl !== '') {
+                if (!hp_is_valid_external_url($videoUrl)) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid background video URL']);
+                    break;
+                }
+                hp_remove_file($vid);
+                $vid = $videoUrl;
+            }
             elseif (isset($_POST['existing_background_video'])) { $vid = (string)$_POST['existing_background_video']; }
 
             magx_db_execute($db, 'UPDATE tbl_home_posts SET title=:t, subtitle=:s, description=:d, icon_image=:i, background_image=:b, background_video=:v, like_count=:l, comment_count=:c, share_count=:sh, display_order=:o, is_active=:a, date_updated=NOW() WHERE id=:id', [
