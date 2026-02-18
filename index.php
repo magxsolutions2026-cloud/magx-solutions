@@ -3341,7 +3341,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
             }
         }
 
-	        @media (max-width: 576px) {
+        @media (max-width: 576px) {
             /* Prevent fixed footer from covering the end of section content */
             #title,
             #aboutcon,
@@ -3351,6 +3351,17 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
                 scroll-padding-bottom: calc(var(--magx-footer-safe-space) + env(safe-area-inset-bottom, 0px));
             }
 
+            /* Use dynamic viewport on modern mobile browsers (Safari iOS included) */
+            @supports (height: 100dvh){
+                #title,
+                #aboutcon,
+                #servicescon,
+                #contactcontainer{
+                    height: calc(100dvh - 40px) !important;
+                    min-height: calc(100dvh - 40px) !important;
+                }
+            }
+
             /* Tighter spacing on very small screens */
             #btnnav .bt { 
                 padding-top: 8px;
@@ -3358,13 +3369,13 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
             }
             
 	            /* Mobile responsive for About section */
-	            #aboutcon {
-	                padding: 40px 20px !important;
-	                height: calc(100vh - 40px) !important;
-	                min-height: 100vh;
-	                overflow-y: auto;
-	                margin: 10px !important;
-	            }
+            #aboutcon {
+                padding: 40px 20px !important;
+                height: calc(100vh - 40px) !important;
+                min-height: calc(100vh - 40px);
+                overflow-y: auto;
+                margin: 10px !important;
+            }
             
             .about-card {
                 padding: 25px !important;
@@ -3402,12 +3413,12 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
             }
             
 	            /* Mobile responsive for Contact section */
-	            #contactcontainer {
-	                padding: 20px 15px !important;
-	                height: calc(100vh - 40px) !important;
-	                min-height: 100vh;
-	                overflow-y: auto;
-	            }
+            #contactcontainer {
+                padding: 20px 15px !important;
+                height: calc(100vh - 40px) !important;
+                min-height: calc(100vh - 40px);
+                overflow-y: auto;
+            }
 
 	            #servicescon{
 	                padding: 40px 20px !important;
@@ -3508,6 +3519,13 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
                 padding: 0 15px !important;
             }
             
+        }
+
+        /* iOS Safari footer/home-indicator needs a bit more bottom breathing room */
+        @supports (-webkit-touch-callout: none) {
+            :root{
+                --magx-footer-safe-space: 104px;
+            }
         }
         
         /* Additional mobile optimizations for very small screens */
@@ -7988,6 +8006,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			            const $homePostsSentinel = $("#homePostsSentinel");
 			            const $homeScrollHint = $("#homeScrollHint");
 			            let homePostsVisible = false;
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 		            function setHomePostsVisible(visible){
 		                if(homePostsVisible === visible){ return; }
@@ -8001,13 +8020,18 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 		                }
 		            }
 
-		            function shouldShowHomePosts(){
-		                if(!$homeScroller.length){ return false; }
-		                const st = $homeScroller.scrollTop();
-		                if(!$homePostsSentinel.length){ return st > 160; }
-		                const triggerTop = Math.max(120, $homePostsSentinel.position().top - ($homeScroller.innerHeight() * 0.25));
-		                return st >= triggerTop;
-		            }
+			            function shouldShowHomePosts(){
+			                if(!$homeScroller.length){ return false; }
+                            if(isIOS){ return true; }
+                            const node = $homeScroller.get(0);
+                            if (node && node.scrollHeight <= (node.clientHeight + 8)) {
+                                return true;
+                            }
+			                const st = $homeScroller.scrollTop();
+			                if(!$homePostsSentinel.length){ return st > 160; }
+			                const triggerTop = Math.max(120, $homePostsSentinel.position().top - ($homeScroller.innerHeight() * 0.25));
+			                return st >= triggerTop;
+			            }
 
 		            function syncHomePostsVisibility(){
 		                setHomePostsVisible(shouldShowHomePosts());
