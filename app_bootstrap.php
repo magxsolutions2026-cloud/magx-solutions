@@ -194,13 +194,6 @@ if (!function_exists('magx_valid_csrf')) {
     function magx_valid_csrf(string $token): bool
     {
         $sessionToken = isset($_SESSION['magx_csrf']) ? (string)$_SESSION['magx_csrf'] : '';
-        if ($sessionToken !== '' && hash_equals($sessionToken, $token)) {
-            return true;
-        }
-        $cookieToken = isset($_COOKIE['magx_csrf']) ? (string)$_COOKIE['magx_csrf'] : '';
-        if ($cookieToken !== '' && hash_equals($cookieToken, $token)) {
-            return true;
-        }
-        return false;
+        return ($sessionToken !== '') && hash_equals($sessionToken, $token);
     }
 }
