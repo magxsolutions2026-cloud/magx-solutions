@@ -18,12 +18,12 @@ if (!function_exists('magx_db_connect')) {
     {
         $databaseUrl = getenv('DATABASE_URL') ?: getenv('SUPABASE_DB_URL') ?: '';
 
-        $host = getenv('DB_HOST') ?: getenv('SUPABASE_DB_HOST') ?: '';
-        $port = getenv('DB_PORT') ?: getenv('SUPABASE_DB_PORT') ?: '5432';
-        $user = getenv('DB_USER') ?: getenv('SUPABASE_DB_USER') ?: '';
-        $pass = getenv('DB_PASS') ?: getenv('SUPABASE_DB_PASSWORD') ?: '';
-        $name = $dbName ?: (getenv('DB_NAME') ?: getenv('SUPABASE_DB_NAME') ?: 'postgres');
-        $sslmode = getenv('DB_SSLMODE') ?: getenv('SUPABASE_DB_SSLMODE') ?: 'require';
+        $host = getenv('DB_HOST') ?: getenv('SUPABASE_DB_HOST') ?: getenv('PGHOST') ?: '';
+        $port = getenv('DB_PORT') ?: getenv('SUPABASE_DB_PORT') ?: getenv('PGPORT') ?: '5432';
+        $user = getenv('DB_USER') ?: getenv('SUPABASE_DB_USER') ?: getenv('PGUSER') ?: '';
+        $pass = getenv('DB_PASS') ?: getenv('SUPABASE_DB_PASSWORD') ?: getenv('PGPASSWORD') ?: '';
+        $name = $dbName ?: (getenv('DB_NAME') ?: getenv('SUPABASE_DB_NAME') ?: getenv('PGDATABASE') ?: 'postgres');
+        $sslmode = getenv('DB_SSLMODE') ?: getenv('SUPABASE_DB_SSLMODE') ?: getenv('PGSSLMODE') ?: 'require';
 
         if ($databaseUrl !== '') {
             $parsed = @parse_url($databaseUrl);
@@ -36,6 +36,12 @@ if (!function_exists('magx_db_connect')) {
                     $urlDb = ltrim((string)$parsed['path'], '/');
                     if ($urlDb !== '') {
                         $name = $dbName ?: $urlDb;
+                    }
+                }
+                if (!empty($parsed['query'])) {
+                    parse_str((string)$parsed['query'], $query);
+                    if (!empty($query['sslmode'])) {
+                        $sslmode = (string)$query['sslmode'];
                     }
                 }
             }
