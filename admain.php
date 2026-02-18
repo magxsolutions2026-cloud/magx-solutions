@@ -1358,8 +1358,25 @@ if (!magx_is_admin_authenticated()) {
                     alert("Error: " + response.message);
                 }
             },
-            error: function() {
-                alert("Error saving post!");
+            error: function(xhr) {
+                var msg = "Error saving post!";
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = "Error: " + xhr.responseJSON.message;
+                } else if (xhr && xhr.responseText) {
+                    try {
+                        var parsed = JSON.parse(xhr.responseText);
+                        if (parsed && parsed.message) {
+                            msg = "Error: " + parsed.message;
+                        }
+                    } catch (e) {
+                        if (xhr.status === 413) {
+                            msg = "Error: Upload too large for serverless request. Try a smaller file.";
+                        }
+                    }
+                } else if (xhr && xhr.status === 413) {
+                    msg = "Error: Upload too large for serverless request. Try a smaller file.";
+                }
+                alert(msg);
             }
         });
     });

@@ -58,8 +58,14 @@ function hp_upload_media($file, string $kind, &$error = null, string $uploadDir 
         return null;
     }
 
-    if (!is_dir($uploadDir)) {
-        @mkdir($uploadDir, 0755, true);
+    $uploadRoot = __DIR__ . '/' . trim($uploadDir, '/\\') . '/';
+    if (!is_dir($uploadRoot)) {
+        @mkdir($uploadRoot, 0755, true);
+    }
+    if (!is_dir($uploadRoot) || !is_writable($uploadRoot)) {
+        // Vercel/serverless deployments usually have read-only app filesystem.
+        $error = 'MEDIA_STORAGE_UNAVAILABLE';
+        return null;
     }
 
     try {
@@ -69,18 +75,27 @@ function hp_upload_media($file, string $kind, &$error = null, string $uploadDir 
     }
 
     $filename = $rand . '_' . time() . '.' . $allowed[$mime];
-    $path = rtrim($uploadDir, '/\\') . '/' . $filename;
+    $path = $uploadRoot . $filename;
     if (!move_uploaded_file($file['tmp_name'], $path)) {
-        $error = 'Failed to save uploaded file.';
+        $error = 'MEDIA_STORAGE_UNAVAILABLE';
         return null;
     }
 
     return $filename;
 }
 
+function hp_media_public_url(?string $value): string {
+    $v = trim((string)$value);
+    if ($v === '') { return ''; }
+    if (preg_match('#^(https?:)?//#i', $v) || strpos($v, 'data:') === 0) { return $v; }
+    if (strpos($v, 'uploads/home_posts/') === 0) { return $v; }
+    return 'uploads/home_posts/' . ltrim($v, '/');
+}
+
 function hp_remove_file(?string $filename): void {
     if (!$filename) { return; }
-    $path = 'uploads/home_posts/' . $filename;
+    $base = basename((string)$filename);
+    $path = __DIR__ . '/uploads/home_posts/' . $base;
     if (file_exists($path)) {
         @unlink($path);
     }
@@ -98,15 +113,9 @@ try {
             $id = (int)($_POST['id'] ?? 0);
             $row = magx_db_execute($db, 'SELECT * FROM tbl_home_posts WHERE id = :id', [':id' => $id])->fetch(PDO::FETCH_ASSOC);
             if ($row) {
-                if (!empty($row['icon_image']) && file_exists('uploads/home_posts/' . $row['icon_image'])) {
-                    $row['icon_image'] = 'uploads/home_posts/' . $row['icon_image'];
-                }
-                if (!empty($row['background_image']) && file_exists('uploads/home_posts/' . $row['background_image'])) {
-                    $row['background_image'] = 'uploads/home_posts/' . $row['background_image'];
-                }
-                if (!empty($row['background_video']) && file_exists('uploads/home_posts/' . $row['background_video'])) {
-                    $row['background_video'] = 'uploads/home_posts/' . $row['background_video'];
-                }
+                $row['icon_image'] = hp_media_public_url($row['icon_image'] ?? '');
+                $row['background_image'] = hp_media_public_url($row['background_image'] ?? '');
+                $row['background_video'] = hp_media_public_url($row['background_video'] ?? '');
                 echo json_encode(['success' => true, 'data' => $row]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Post not found']);
@@ -125,18 +134,24 @@ try {
             $active = (int)($_POST['is_active'] ?? 1);
 
             $iconErr = null; $bgErr = null; $vidErr = null;
+            $warnings = [];
             $icon = hp_upload_media($_FILES['icon_image'] ?? null, 'image', $iconErr) ?: '';
-            if ($iconErr) { echo json_encode(['success'=>false,'message'=>$iconErr]); break; }
+            if ($iconErr && $iconErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$iconErr]); break; }
+            if ($iconErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Icon upload skipped (server storage unavailable).'; }
             $bg = hp_upload_media($_FILES['background_image'] ?? null, 'image', $bgErr) ?: '';
-            if ($bgErr) { echo json_encode(['success'=>false,'message'=>$bgErr]); break; }
+            if ($bgErr && $bgErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$bgErr]); break; }
+            if ($bgErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Background image upload skipped (server storage unavailable).'; }
             $vid = hp_upload_media($_FILES['background_video'] ?? null, 'video', $vidErr) ?: '';
-            if ($vidErr) { echo json_encode(['success'=>false,'message'=>$vidErr]); break; }
+            if ($vidErr && $vidErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$vidErr]); break; }
+            if ($vidErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Background video upload skipped (server storage unavailable).'; }
 
             magx_db_execute($db, 'INSERT INTO tbl_home_posts (title, subtitle, description, icon_image, background_image, background_video, like_count, comment_count, share_count, display_order, is_active, date_created, date_updated) VALUES (:t,:s,:d,:i,:b,:v,:l,:c,:sh,:o,:a,NOW(),NOW())', [
                 ':t'=>$title, ':s'=>$subtitle, ':d'=>$description, ':i'=>$icon, ':b'=>$bg, ':v'=>$vid,
                 ':l'=>$like, ':c'=>$comment, ':sh'=>$share, ':o'=>$order, ':a'=>$active
             ]);
-            echo json_encode(['success' => true, 'message' => 'Post added successfully']);
+            $msg = 'Post added successfully';
+            if (!empty($warnings)) { $msg .= ' ' . implode(' ', $warnings); }
+            echo json_encode(['success' => true, 'message' => $msg]);
             break;
         }
 
@@ -157,18 +172,22 @@ try {
             $vid = (string)($current['background_video'] ?? '');
 
             $iconErr = null; $bgErr = null; $vidErr = null;
+            $warnings = [];
             $newIcon = hp_upload_media($_FILES['icon_image'] ?? null, 'image', $iconErr);
-            if ($iconErr) { echo json_encode(['success'=>false,'message'=>$iconErr]); break; }
+            if ($iconErr && $iconErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$iconErr]); break; }
+            if ($iconErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Icon upload skipped (server storage unavailable).'; }
             if ($newIcon) { hp_remove_file($icon); $icon = $newIcon; }
             elseif (isset($_POST['existing_icon_image'])) { $icon = (string)$_POST['existing_icon_image']; }
 
             $newBg = hp_upload_media($_FILES['background_image'] ?? null, 'image', $bgErr);
-            if ($bgErr) { echo json_encode(['success'=>false,'message'=>$bgErr]); break; }
+            if ($bgErr && $bgErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$bgErr]); break; }
+            if ($bgErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Background image upload skipped (server storage unavailable).'; }
             if ($newBg) { hp_remove_file($bg); $bg = $newBg; }
             elseif (isset($_POST['existing_background_image'])) { $bg = (string)$_POST['existing_background_image']; }
 
             $newVid = hp_upload_media($_FILES['background_video'] ?? null, 'video', $vidErr);
-            if ($vidErr) { echo json_encode(['success'=>false,'message'=>$vidErr]); break; }
+            if ($vidErr && $vidErr !== 'MEDIA_STORAGE_UNAVAILABLE') { echo json_encode(['success'=>false,'message'=>$vidErr]); break; }
+            if ($vidErr === 'MEDIA_STORAGE_UNAVAILABLE') { $warnings[] = 'Background video upload skipped (server storage unavailable).'; }
             if ($newVid) { hp_remove_file($vid); $vid = $newVid; }
             elseif (isset($_POST['existing_background_video'])) { $vid = (string)$_POST['existing_background_video']; }
 
@@ -176,7 +195,9 @@ try {
                 ':t'=>$title, ':s'=>$subtitle, ':d'=>$description, ':i'=>$icon, ':b'=>$bg, ':v'=>$vid,
                 ':l'=>$like, ':c'=>$comment, ':sh'=>$share, ':o'=>$order, ':a'=>$active, ':id'=>$id
             ]);
-            echo json_encode(['success' => true, 'message' => 'Post updated successfully']);
+            $msg = 'Post updated successfully';
+            if (!empty($warnings)) { $msg .= ' ' . implode(' ', $warnings); }
+            echo json_encode(['success' => true, 'message' => $msg]);
             break;
         }
 

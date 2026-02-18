@@ -63,31 +63,31 @@ function outputHomePostCard(array $post, int $positionIndex) {
     $shareCount = intval($post['share_count'] ?? 0);
     $iconImage = 'logomagx.png';
     if (!empty($post['icon_image'])) {
-        $iconUploadPath = 'uploads/home_posts/' . $post['icon_image'];
-        if (file_exists($iconUploadPath)) {
-            $iconImage = $iconUploadPath;
+        $iconRaw = trim((string)$post['icon_image']);
+        if (preg_match('#^(https?:)?//#i', $iconRaw) || strpos($iconRaw, 'data:') === 0 || strpos($iconRaw, 'uploads/home_posts/') === 0) {
+            $iconImage = htmlspecialchars($iconRaw);
         } else {
-            $iconImage = htmlspecialchars((string)$post['icon_image']);
+            $iconImage = 'uploads/home_posts/' . ltrim($iconRaw, '/');
         }
     }
 
     $bgImage = '';
     if (!empty($post['background_image'])) {
-        $uploadPath = 'uploads/home_posts/' . $post['background_image'];
-        if (file_exists($uploadPath)) {
-            $bgImage = $uploadPath;
+        $bgRaw = trim((string)$post['background_image']);
+        if (preg_match('#^(https?:)?//#i', $bgRaw) || strpos($bgRaw, 'data:') === 0 || strpos($bgRaw, 'uploads/home_posts/') === 0) {
+            $bgImage = htmlspecialchars($bgRaw);
         } else {
-            $bgImage = htmlspecialchars((string)$post['background_image']);
+            $bgImage = 'uploads/home_posts/' . ltrim($bgRaw, '/');
         }
     }
 
     $bgVideo = '';
     if (!empty($post['background_video'])) {
-        $videoUploadPath = 'uploads/home_posts/' . $post['background_video'];
-        if (file_exists($videoUploadPath)) {
-            $bgVideo = $videoUploadPath;
+        $vidRaw = trim((string)$post['background_video']);
+        if (preg_match('#^(https?:)?//#i', $vidRaw) || strpos($vidRaw, 'data:') === 0 || strpos($vidRaw, 'uploads/home_posts/') === 0) {
+            $bgVideo = htmlspecialchars($vidRaw);
         } else {
-            $bgVideo = htmlspecialchars((string)$post['background_video']);
+            $bgVideo = 'uploads/home_posts/' . ltrim($vidRaw, '/');
         }
     }
     $title = htmlspecialchars($post['title'] ?? '');

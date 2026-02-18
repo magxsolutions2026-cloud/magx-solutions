@@ -1,6 +1,14 @@
 <?php
 require_once __DIR__ . '/app_bootstrap.php';
 
+function hp_public_media_url(?string $value): string {
+    $v = trim((string)$value);
+    if ($v === '') { return ''; }
+    if (preg_match('#^(https?:)?//#i', $v) || strpos($v, 'data:') === 0) { return $v; }
+    if (strpos($v, 'uploads/home_posts/') === 0) { return $v; }
+    return 'uploads/home_posts/' . ltrim($v, '/');
+}
+
 function loadHomePostsForDisplay() {
     $db = magx_db_connect();
     if (!$db) {
@@ -11,15 +19,9 @@ function loadHomePostsForDisplay() {
         $stmt = magx_db_execute($db, 'SELECT * FROM tbl_home_posts WHERE is_active = 1 ORDER BY display_order ASC, id ASC');
         $posts = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         foreach ($posts as &$row) {
-            if (!empty($row['icon_image']) && file_exists('uploads/home_posts/' . $row['icon_image'])) {
-                $row['icon_image'] = 'uploads/home_posts/' . $row['icon_image'];
-            }
-            if (!empty($row['background_image']) && file_exists('uploads/home_posts/' . $row['background_image'])) {
-                $row['background_image'] = 'uploads/home_posts/' . $row['background_image'];
-            }
-            if (!empty($row['background_video']) && file_exists('uploads/home_posts/' . $row['background_video'])) {
-                $row['background_video'] = 'uploads/home_posts/' . $row['background_video'];
-            }
+            $row['icon_image'] = hp_public_media_url($row['icon_image'] ?? '');
+            $row['background_image'] = hp_public_media_url($row['background_image'] ?? '');
+            $row['background_video'] = hp_public_media_url($row['background_video'] ?? '');
         }
         return $posts;
     } catch (Throwable $e) {
