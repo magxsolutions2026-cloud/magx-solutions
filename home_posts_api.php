@@ -266,19 +266,17 @@ try {
                     break;
                 }
 
-                magx_db_execute($db, 'INSERT INTO tbl_home_post_likes (post_id, device_id, created_at) VALUES (:id, :d, NOW()) ON CONFLICT (post_id, device_id) DO NOTHING', [
+                $ins = magx_db_execute($db, 'INSERT INTO tbl_home_post_likes (post_id, device_id, created_at) VALUES (:id, :d, NOW()) ON CONFLICT (post_id, device_id) DO NOTHING RETURNING 1 AS inserted', [
                     ':id' => $id, ':d' => $device
                 ]);
 
-                $liked = false;
-                $chk = magx_db_execute($db, 'SELECT EXISTS (SELECT 1 FROM tbl_home_post_likes WHERE post_id = :id AND device_id = :d) AS ex', [':id'=>$id, ':d'=>$device])->fetch(PDO::FETCH_ASSOC);
-                $liked = !empty($chk['ex']);
+                $insertedRow = $ins->fetch(PDO::FETCH_ASSOC);
+                $inserted = !empty($insertedRow['inserted']);
 
-                if ($liked) {
-                    $cnt = magx_db_execute($db, 'SELECT COUNT(*)::int AS c FROM tbl_home_post_likes WHERE post_id = :id', [':id' => $id])->fetch(PDO::FETCH_ASSOC);
-                    $count = (int)($cnt['c'] ?? 0);
-                    magx_db_execute($db, 'UPDATE tbl_home_posts SET like_count = :c, date_updated = NOW() WHERE id = :id', [':c'=>$count, ':id'=>$id]);
-                    echo json_encode(['success'=>true,'count'=>$count,'liked'=>true,'already_liked'=>false]);
+                if ($inserted) {
+                    magx_db_execute($db, 'UPDATE tbl_home_posts SET like_count = COALESCE(like_count, 0) + 1, date_updated = NOW() WHERE id = :id', [':id' => $id]);
+                    $row = magx_db_execute($db, 'SELECT like_count AS c FROM tbl_home_posts WHERE id = :id', [':id' => $id])->fetch(PDO::FETCH_ASSOC);
+                    echo json_encode(['success'=>true,'count'=>(int)($row['c'] ?? 0),'liked'=>true,'already_liked'=>false]);
                 } else {
                     $row = magx_db_execute($db, 'SELECT like_count AS c FROM tbl_home_posts WHERE id = :id', [':id'=>$id])->fetch(PDO::FETCH_ASSOC);
                     echo json_encode(['success'=>true,'count'=>(int)($row['c'] ?? 0),'liked'=>false,'already_liked'=>true]);
