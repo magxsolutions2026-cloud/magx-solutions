@@ -677,7 +677,7 @@ if (!magx_is_admin_authenticated()) {
     </head>
     <body>
          <header>
-            <img src="logomagx.png" width="3%" height="auto" class="img-fluid" alt="logo" id="logo"/>
+            <img src="withbacklogo.jpg" width="3%" height="auto" class="img-fluid" alt="logo" id="logo"/>
             <div class="header-title">
                 <h1 class="h2 h3-md m-0" style="margin:0;">MAGX Admin Console</h1>
                 <div style="font-size:12px; letter-spacing:0.18em; text-transform:uppercase; color:#cfe3ff;">Personal Website Control</div>
