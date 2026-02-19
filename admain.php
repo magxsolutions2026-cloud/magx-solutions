@@ -368,20 +368,128 @@ if (!magx_is_admin_authenticated()) {
                     color: white;
                 }
 
-                /* Home Posts and Contacts Tables use logs-table styling */
-                #home_posts_table .btn-sm,
-                #contacts_table .btn-sm {
-                    padding: 5px 10px;
-                    font-size: 12px;
+                /* Record cards */
+                .records-grid{
+                    display:grid;
+                    grid-template-columns:repeat(auto-fit, minmax(290px, 1fr));
+                    gap:18px;
                 }
-
-                #contacts_table img {
-                    display: block;
-                    width: 50px;
-                    height: 50px;
-                    border-radius: 50%;
-                    object-fit: cover;
-                    margin: 0 auto;
+                .record-card{
+                    background: linear-gradient(155deg, rgba(255,255,255,0.97), rgba(248,252,255,0.95));
+                    border: 1px solid rgba(19,72,143,0.16);
+                    border-radius: 16px;
+                    box-shadow: 0 14px 30px rgba(4, 19, 44, 0.16);
+                    overflow: hidden;
+                    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+                    opacity: 0;
+                    transform: translateY(10px);
+                    animation: recordIn .45s ease forwards;
+                }
+                .record-card:hover{
+                    transform: translateY(-4px);
+                    box-shadow: 0 22px 42px rgba(4, 19, 44, 0.22);
+                    border-color: rgba(29,124,255,0.38);
+                }
+                .records-grid .record-card:nth-child(2){ animation-delay: .04s; }
+                .records-grid .record-card:nth-child(3){ animation-delay: .08s; }
+                .records-grid .record-card:nth-child(4){ animation-delay: .12s; }
+                .records-grid .record-card:nth-child(5){ animation-delay: .16s; }
+                .records-grid .record-card:nth-child(6){ animation-delay: .20s; }
+                .records-grid .record-card:nth-child(7){ animation-delay: .24s; }
+                .records-grid .record-card:nth-child(8){ animation-delay: .28s; }
+                @keyframes recordIn{
+                    to{
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .record-media{
+                    position: relative;
+                    height: 172px;
+                    background: #122745;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                }
+                .record-media img, .record-media video{
+                    width:100%;
+                    height:100%;
+                    object-fit:cover;
+                }
+                .record-chip{
+                    position:absolute;
+                    top:10px;
+                    left:10px;
+                    background: rgba(11,28,52,.78);
+                    color:#eef5ff;
+                    border:1px solid rgba(255,255,255,.22);
+                    border-radius:999px;
+                    padding:5px 10px;
+                    font-size:11px;
+                    font-weight:800;
+                    letter-spacing:.05em;
+                    text-transform:uppercase;
+                }
+                .record-body{
+                    padding:14px 14px 12px;
+                }
+                .record-title{
+                    color:#0f1d38;
+                    font-weight:800;
+                    margin:0 0 2px;
+                    font-size:17px;
+                }
+                .record-subtitle{
+                    color:#446089;
+                    font-size:13px;
+                    margin:0 0 12px;
+                }
+                .record-meta{
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    margin-bottom:12px;
+                    font-size:13px;
+                    color:#334e76;
+                }
+                .record-actions{
+                    border-top:1px solid rgba(19,72,143,0.12);
+                    padding-top:12px;
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    gap:10px;
+                }
+                .record-actions .btn-sm{
+                    border-radius:999px;
+                    font-weight:700;
+                    transition: transform .2s ease, box-shadow .2s ease;
+                }
+                .record-actions .btn-sm:hover{
+                    transform: translateY(-1px);
+                    box-shadow: 0 8px 14px rgba(3, 16, 36, 0.2);
+                }
+                .contact-avatar-wrap{
+                    width:104px;
+                    height:104px;
+                    border-radius:50%;
+                    overflow:hidden;
+                    border:4px solid rgba(255,255,255,0.55);
+                    box-shadow: 0 12px 26px rgba(7,16,32,.32);
+                }
+                .contact-avatar-wrap img{
+                    width:100%;
+                    height:100%;
+                    object-fit:cover;
+                }
+                .empty-records{
+                    text-align:center;
+                    padding:42px 20px;
+                    background: rgba(255,255,255,0.88);
+                    border: 1px dashed rgba(19,72,143,0.24);
+                    border-radius: 14px;
+                    color:#2f476d;
+                    font-weight:700;
                 }
 
                 /* Toggle Switch Styles */
@@ -496,6 +604,30 @@ if (!magx_is_admin_authenticated()) {
                 }
                 .loader-overlay{
                     background: rgba(8,12,24,0.82);
+                }
+                @media (max-width: 992px){
+                    #home_posts > div,
+                    #contacts_section > div{
+                        margin: 16px 16px !important;
+                    }
+                    .records-grid{
+                        grid-template-columns: 1fr;
+                        gap: 14px;
+                    }
+                    .record-media{
+                        height: 156px;
+                    }
+                    .record-actions{
+                        flex-wrap: wrap;
+                    }
+                    .record-actions > div{
+                        width:100%;
+                        display:flex;
+                        gap:8px;
+                    }
+                    .record-actions > div .btn{
+                        flex:1;
+                    }
                 }
         </style>
         <link rel="stylesheet" href="assets/css/admin-unified-theme.css?v=20260217">
@@ -1157,7 +1289,7 @@ if (!magx_is_admin_authenticated()) {
         });
     }
 
-    // Display home posts in table
+    // Display home posts as cards
     function displayHomePosts(posts) {
         function resolveMediaUrl(v, fallbackPrefix){
             v = String(v || "").trim();
@@ -1165,56 +1297,50 @@ if (!magx_is_admin_authenticated()) {
             if(/^https?:\/\//i.test(v) || /^data:/i.test(v) || v.indexOf("uploads/") === 0){ return v; }
             return fallbackPrefix + v;
         }
-        var html = '<div class="logs-container">';
-        html += '<table class="logs-table">';
-        html += '<thead>';
-        html += '<tr>';
-        html += '<th colspan="6" class="logs-title">HOME POSTS</th>';
-        html += '</tr>';
-        html += '<tr>';
-        html += '<th>Order</th>';
-        html += '<th>Picture</th>';
-        html += '<th>Title</th>';
-        html += '<th>Subtitle</th>';
-        html += '<th>Status</th>';
-        html += '<th>Actions</th>';
-        html += '</tr>';
-        html += '</thead>';
-        html += '<tbody>';
+        var html = '<div class="records-grid">';
         
         if(posts.length === 0) {
-            html += '<tr><td colspan="6" class="text-center">No posts found</td></tr>';
+            html += '<div class="empty-records">No home posts found.</div>';
         } else {
             posts.forEach(function(post) {
                 var hasVideo = !!post.background_video;
-                var backgroundUrl = post.background_image ? resolveMediaUrl(post.background_image, 'uploads/home_posts/') : 'https://via.placeholder.com/50/672222/ffffff?text=BG';
+                var backgroundUrl = post.background_image ? resolveMediaUrl(post.background_image, 'uploads/home_posts/') : 'https://via.placeholder.com/1200x675/18365f/eaf2ff?text=Post+Media';
                 var videoUrl = post.background_video ? resolveMediaUrl(post.background_video, 'uploads/home_posts/') : '';
                 var isActive = post.is_active == 1;
-                html += '<tr>';
-                html += '<td>' + post.display_order + '</td>';
+                html += '<div class="record-card">';
+                html += '<div class="record-media">';
+                html += '<span class="record-chip">Order #' + (post.display_order || 0) + '</span>';
                 if(hasVideo) {
-                    html += '<td style="text-align: center;"><a href="' + videoUrl + '" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; width: 50px; height: 50px; border-radius: 5px; background:#f3e9e9; color:#672222; text-decoration:none;"><i class="fas fa-video"></i><span style="font-size:11px; font-weight:700;">VID</span></a></td>';
+                    html += '<a href="' + videoUrl + '" target="_blank" rel="noopener" style="text-decoration:none; display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#dbeaff; background:radial-gradient(circle at 50% 35%, rgba(68,130,230,0.35), rgba(8,18,38,0.9));">';
+                    html += '<div style="text-align:center;"><i class="fas fa-video" style="font-size:30px;"></i><div style="font-size:12px; font-weight:800; letter-spacing:.08em; margin-top:8px;">VIDEO POST</div></div>';
+                    html += '</a>';
                 } else {
-                    html += '<td style="text-align: center;"><img src="' + backgroundUrl + '" alt="' + (post.title || '') + '" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover; display: block; margin: 0 auto;" onerror="this.src=\'https://via.placeholder.com/50/672222/ffffff?text=BG\'; this.onerror=null;"></td>';
+                    html += '<img src="' + backgroundUrl + '" alt="' + (post.title || '') + '" onerror="this.src=\'https://via.placeholder.com/1200x675/18365f/eaf2ff?text=Post+Media\'; this.onerror=null;">';
                 }
-                html += '<td>' + post.title + '</td>';
-                html += '<td>' + (post.subtitle || '-') + '</td>';
-                html += '<td>';
-                html += '<label class="toggle-switch"> on';
+                html += '</div>';
+                html += '<div class="record-body">';
+                html += '<h5 class="record-title">' + (post.title || 'Untitled Post') + '</h5>';
+                html += '<p class="record-subtitle">' + (post.subtitle || 'No subtitle provided') + '</p>';
+                html += '<div class="record-meta">';
+                html += '<span><i class="fas fa-heart" style="color:#d33f49;"></i> ' + (post.like_count || 0) + '</span>';
+                html += '<span><i class="fas fa-comment" style="color:#1d7cff;"></i> ' + (post.comment_count || 0) + '</span>';
+                html += '<span><i class="fas fa-share" style="color:#00a778;"></i> ' + (post.share_count || 0) + '</span>';
+                html += '</div>';
+                html += '<div class="record-actions">';
+                html += '<label class="toggle-switch">';
                 html += '<input type="checkbox" ' + (isActive ? 'checked' : '') + ' onchange="toggleHomePostStatus(' + post.id + ', this.checked)">';
                 html += '<span class="toggle-slider"></span>';
                 html += '</label>';
-                html += '</td>';
-                html += '<td>';
-                html += '<button style="background-color:#672222 ; color:white;" class="btn btn-sm  me-2" onclick="editHomePost(' + post.id + ')"><i class="fas fa-edit"></i> Edit</button>';
+                html += '<div>';
+                html += '<button style="background-color:#0f3a76 ; color:white;" class="btn btn-sm me-2" onclick="editHomePost(' + post.id + ')"><i class="fas fa-edit"></i> Edit</button>';
                 html += '<button class="btn btn-sm btn-danger" onclick="deleteHomePost(' + post.id + ')"><i class="fas fa-trash"></i> Delete</button>';
-                html += '</td>';
-                html += '</tr>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
             });
         }
         
-        html += '</tbody>';
-        html += '</table>';
         html += '</div>';
         
         $('#home_posts_table').html(html);
@@ -1626,52 +1752,40 @@ if (!magx_is_admin_authenticated()) {
         });
     }
 
-    // Display contacts in table
+    // Display contacts as cards
     function displayContacts(contacts) {
-        var html = '<div class="logs-container">';
-        html += '<table class="logs-table">';
-        html += '<thead>';
-        html += '<tr>';
-        html += '<th colspan="6" class="logs-title">CONTACTS</th>';
-        html += '</tr>';
-        html += '<tr>';
-        html += '<th>Order</th>';
-        html += '<th>Picture</th>';
-        html += '<th>Name</th>';
-        html += '<th>Position</th>';
-        html += '<th>Status</th>';
-        html += '<th>Actions</th>';
-        html += '</tr>';
-        html += '</thead>';
-        html += '<tbody>';
+        var html = '<div class="records-grid">';
         
         if(contacts.length === 0) {
-            html += '<tr><td colspan="6" class="text-center">No contacts found</td></tr>';
+            html += '<div class="empty-records">No contacts found.</div>';
         } else {
             contacts.forEach(function(contact) {
-                var pictureUrl = contact.picture ? (contact.picture.startsWith('uploads/') ? contact.picture : 'uploads/contacts/' + contact.picture) : 'https://via.placeholder.com/50/672222/ffffff?text=' + (contact.name ? contact.name.substring(0, 2) : 'NA');
+                var initials = (contact.name ? contact.name.substring(0, 2).toUpperCase() : 'NA');
+                var pictureUrl = contact.picture ? (contact.picture.startsWith('uploads/') ? contact.picture : 'uploads/contacts/' + contact.picture) : 'https://via.placeholder.com/220x220/18365f/eaf2ff?text=' + initials;
                 var isActive = contact.is_active == 1;
-                html += '<tr>';
-                html += '<td>' + (contact.display_order || 0) + '</td>';
-                html += '<td style="text-align: center;"><img src="' + pictureUrl + '" alt="' + (contact.name || '') + '" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto;" onerror="this.src=\'https://via.placeholder.com/50/672222/ffffff?text=' + (contact.name ? contact.name.substring(0, 2) : 'NA') + '\'; this.onerror=null;"></td>';
-                html += '<td>' + (contact.name || '-') + '</td>';
-                html += '<td>' + (contact.position || '-') + '</td>';
-                html += '<td>';
+                html += '<div class="record-card">';
+                html += '<div class="record-media" style="height:150px; background:linear-gradient(135deg, #13355f, #0c1f3f);">';
+                html += '<span class="record-chip">Order #' + (contact.display_order || 0) + '</span>';
+                html += '<div class="contact-avatar-wrap"><img src="' + pictureUrl + '" alt="' + (contact.name || '') + '" onerror="this.src=\'https://via.placeholder.com/220x220/18365f/eaf2ff?text=' + initials + '\'; this.onerror=null;"></div>';
+                html += '</div>';
+                html += '<div class="record-body">';
+                html += '<h5 class="record-title">' + (contact.name || 'No Name') + '</h5>';
+                html += '<p class="record-subtitle">' + (contact.position || 'No position provided') + '</p>';
+                html += '<div class="record-actions">';
                 html += '<label class="toggle-switch">';
                 html += '<input type="checkbox" ' + (isActive ? 'checked' : '') + ' onchange="toggleContactStatus(' + contact.id + ', this.checked)">';
                 html += '<span class="toggle-slider"></span>';
                 html += '</label>';
-                html += '</td>';
-                html += '<td>';
+                html += '<div>';
                 html += '<button class="btn btn-sm btn-info me-2" onclick="editContact(' + contact.id + ')"><i class="fas fa-edit"></i> Edit</button>';
                 html += '<button class="btn btn-sm btn-danger" onclick="deleteContact(' + contact.id + ')"><i class="fas fa-trash"></i> Delete</button>';
-                html += '</td>';
-                html += '</tr>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
             });
         }
         
-        html += '</tbody>';
-        html += '</table>';
         html += '</div>';
         
         $('#contacts_table').html(html);
