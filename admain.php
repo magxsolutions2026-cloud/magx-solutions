@@ -374,9 +374,44 @@ if (!magx_is_admin_authenticated()) {
                     grid-template-columns:repeat(auto-fit, minmax(290px, 1fr));
                     gap:18px;
                 }
+                .records-grid.list-mode{
+                    grid-template-columns:1fr;
+                    gap:14px;
+                }
+                .records-grid.list-mode .record-card{
+                    display:grid;
+                    grid-template-columns: 280px 1fr;
+                    align-items:stretch;
+                }
+                .records-grid.list-mode .record-media{
+                    height:100% !important;
+                    min-height:180px;
+                }
+                .record-toolbar{
+                    display:flex;
+                    justify-content:space-between;
+                    gap:12px;
+                    margin-bottom:14px;
+                    flex-wrap:wrap;
+                }
+                .record-search-input{
+                    background: linear-gradient(150deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06)) !important;
+                    border: 1px solid rgba(95,210,255,0.28) !important;
+                    color: #eaf6ff !important;
+                    border-radius: 999px !important;
+                    min-width: 260px;
+                    max-width: 430px;
+                }
+                .record-search-input::placeholder{
+                    color: rgba(208,233,252,0.65) !important;
+                }
+                .record-view-toggle{
+                    border-radius:999px !important;
+                    font-weight:700 !important;
+                }
                 .record-card{
-                    background: linear-gradient(155deg, rgba(255,255,255,0.97), rgba(248,252,255,0.95));
-                    border: 1px solid rgba(19,72,143,0.16);
+                    background: linear-gradient(160deg, rgba(7, 24, 52, 0.95), rgba(5, 16, 36, 0.96));
+                    border: 1px solid rgba(95,210,255,0.22);
                     border-radius: 16px;
                     box-shadow: 0 14px 30px rgba(4, 19, 44, 0.16);
                     overflow: hidden;
@@ -432,28 +467,29 @@ if (!magx_is_admin_authenticated()) {
                 }
                 .record-body{
                     padding:14px 14px 12px;
+                    background: linear-gradient(170deg, rgba(8, 24, 49, 0.94), rgba(6, 16, 34, 0.96));
                 }
-                .record-title{
-                    color:#0f1d38;
+                .record-card .record-title{
+                    color:#eef6ff !important;
                     font-weight:800;
                     margin:0 0 2px;
                     font-size:17px;
                 }
-                .record-subtitle{
-                    color:#446089;
+                .record-card .record-subtitle{
+                    color:rgba(215,234,255,0.82) !important;
                     font-size:13px;
                     margin:0 0 12px;
                 }
-                .record-meta{
+                .record-card .record-meta{
                     display:flex;
                     justify-content:space-between;
                     align-items:center;
                     margin-bottom:12px;
                     font-size:13px;
-                    color:#334e76;
+                    color:#c6def8 !important;
                 }
                 .record-actions{
-                    border-top:1px solid rgba(19,72,143,0.12);
+                    border-top:1px solid rgba(95,210,255,0.22);
                     padding-top:12px;
                     display:flex;
                     justify-content:space-between;
@@ -485,10 +521,10 @@ if (!magx_is_admin_authenticated()) {
                 .empty-records{
                     text-align:center;
                     padding:42px 20px;
-                    background: rgba(255,255,255,0.88);
-                    border: 1px dashed rgba(19,72,143,0.24);
+                    background: linear-gradient(160deg, rgba(8, 24, 49, 0.88), rgba(6, 16, 34, 0.9));
+                    border: 1px dashed rgba(95,210,255,0.32);
                     border-radius: 14px;
-                    color:#2f476d;
+                    color:#d6ebff;
                     font-weight:700;
                 }
 
@@ -614,10 +650,17 @@ if (!magx_is_admin_authenticated()) {
                         grid-template-columns: 1fr;
                         gap: 14px;
                     }
+                    .records-grid.list-mode .record-card{
+                        grid-template-columns: 1fr;
+                    }
                     .record-media{
                         height: 156px;
                     }
-                    .record-actions{
+                    .record-search-input{
+                        min-width: 100%;
+                        max-width: 100%;
+                    }
+                .record-actions{
                         flex-wrap: wrap;
                     }
                     .record-actions > div{
@@ -688,6 +731,12 @@ if (!magx_is_admin_authenticated()) {
                         <i class="fas fa-plus"></i> Add New Post
                     </button>
                 </div>
+                <div class="record-toolbar">
+                    <input type="text" class="form-control record-search-input" id="homePostsSearchInput" placeholder="Search posts by title, subtitle, or description...">
+                    <button type="button" class="btn btn-outline-light record-view-toggle" id="homePostsViewToggle">
+                        <i class="fas fa-list"></i> List View
+                    </button>
+                </div>
                 <div id="home_posts_table" style="overflow-y: auto;">
                     <!-- Posts will display here -->
                 </div>
@@ -707,6 +756,12 @@ if (!magx_is_admin_authenticated()) {
                             <i class="fas fa-cog"></i> Manage Footer Contact
                         </button>
                     </div>
+                </div>
+                <div class="record-toolbar">
+                    <input type="text" class="form-control record-search-input" id="contactsSearchInput" placeholder="Search contacts by name or position...">
+                    <button type="button" class="btn btn-outline-light record-view-toggle" id="contactsViewToggle">
+                        <i class="fas fa-list"></i> List View
+                    </button>
                 </div>
                 <div id="contacts_table" style="overflow-x: auto; overflow-y: visible; min-height: 200px;">
                     <!-- Contacts will display here -->
@@ -1071,6 +1126,17 @@ if (!magx_is_admin_authenticated()) {
     const MAGX_SUPABASE_ANON_KEY = <?php echo json_encode((string)(getenv('SUPABASE_ANON_KEY') ?: '')); ?>;
     const MAGX_HOME_POSTS_BUCKET = <?php echo json_encode((string)(getenv('SUPABASE_STORAGE_BUCKET_HOME_POSTS') ?: 'home-posts-media')); ?>;
     const MAGX_SUPABASE_READY = !!(MAGX_SUPABASE_URL && MAGX_SUPABASE_ANON_KEY && MAGX_HOME_POSTS_BUCKET);
+    let homePostsRecords = [];
+    let contactsRecords = [];
+    let homePostsSearchTerm = "";
+    let contactsSearchTerm = "";
+    let homePostsViewMode = "card";
+    let contactsViewMode = "card";
+
+    function normalizeText(value) {
+        return String(value || "").toLowerCase();
+    }
+
     $(document).ready(function(){
         $("#home_posts").show();
         $("#contacts_section").hide();
@@ -1103,6 +1169,32 @@ if (!magx_is_admin_authenticated()) {
             $("#portfolio_section").hide();
             $("#contacts_section").show();
             loadContacts();
+        });
+
+        $("#homePostsSearchInput").on("input", function(){
+            homePostsSearchTerm = String($(this).val() || "");
+            renderHomePosts();
+        });
+
+        $("#contactsSearchInput").on("input", function(){
+            contactsSearchTerm = String($(this).val() || "");
+            renderContacts();
+        });
+
+        $("#homePostsViewToggle").on("click", function(){
+            homePostsViewMode = (homePostsViewMode === "card") ? "list" : "card";
+            $(this).html(homePostsViewMode === "card"
+                ? '<i class="fas fa-list"></i> List View'
+                : '<i class="fas fa-th-large"></i> Card View');
+            renderHomePosts();
+        });
+
+        $("#contactsViewToggle").on("click", function(){
+            contactsViewMode = (contactsViewMode === "card") ? "list" : "card";
+            $(this).html(contactsViewMode === "card"
+                ? '<i class="fas fa-list"></i> List View'
+                : '<i class="fas fa-th-large"></i> Card View');
+            renderContacts();
         });
 
         // end side nav
@@ -1289,18 +1381,38 @@ if (!magx_is_admin_authenticated()) {
         });
     }
 
-    // Display home posts as cards
+    function getFilteredHomePosts() {
+        if (!homePostsSearchTerm) {
+            return homePostsRecords;
+        }
+
+        var query = normalizeText(homePostsSearchTerm);
+        return homePostsRecords.filter(function(post){
+            return normalizeText(post.title).indexOf(query) > -1 ||
+                normalizeText(post.subtitle).indexOf(query) > -1 ||
+                normalizeText(post.description).indexOf(query) > -1;
+        });
+    }
+
+    // Display home posts as cards/list
     function displayHomePosts(posts) {
+        homePostsRecords = Array.isArray(posts) ? posts : [];
+        renderHomePosts();
+    }
+
+    function renderHomePosts() {
         function resolveMediaUrl(v, fallbackPrefix){
             v = String(v || "").trim();
             if(!v){ return ""; }
             if(/^https?:\/\//i.test(v) || /^data:/i.test(v) || v.indexOf("uploads/") === 0){ return v; }
             return fallbackPrefix + v;
         }
-        var html = '<div class="records-grid">';
+        var posts = getFilteredHomePosts();
+        var gridClass = 'records-grid' + (homePostsViewMode === 'list' ? ' list-mode' : '');
+        var html = '<div class="' + gridClass + '">';
         
         if(posts.length === 0) {
-            html += '<div class="empty-records">No home posts found.</div>';
+            html += '<div class="empty-records">' + (homePostsSearchTerm ? 'No home posts found for your search.' : 'No home posts found.') + '</div>';
         } else {
             posts.forEach(function(post) {
                 var hasVideo = !!post.background_video;
@@ -1752,12 +1864,31 @@ if (!magx_is_admin_authenticated()) {
         });
     }
 
-    // Display contacts as cards
+    function getFilteredContacts() {
+        if (!contactsSearchTerm) {
+            return contactsRecords;
+        }
+
+        var query = normalizeText(contactsSearchTerm);
+        return contactsRecords.filter(function(contact){
+            return normalizeText(contact.name).indexOf(query) > -1 ||
+                normalizeText(contact.position).indexOf(query) > -1;
+        });
+    }
+
+    // Display contacts as cards/list
     function displayContacts(contacts) {
-        var html = '<div class="records-grid">';
+        contactsRecords = Array.isArray(contacts) ? contacts : [];
+        renderContacts();
+    }
+
+    function renderContacts() {
+        var contacts = getFilteredContacts();
+        var gridClass = 'records-grid' + (contactsViewMode === 'list' ? ' list-mode' : '');
+        var html = '<div class="' + gridClass + '">';
         
         if(contacts.length === 0) {
-            html += '<div class="empty-records">No contacts found.</div>';
+            html += '<div class="empty-records">' + (contactsSearchTerm ? 'No contacts found for your search.' : 'No contacts found.') + '</div>';
         } else {
             contacts.forEach(function(contact) {
                 var initials = (contact.name ? contact.name.substring(0, 2).toUpperCase() : 'NA');
