@@ -55,7 +55,7 @@ if ($action === 'DECIDE') {
     $decision = strtoupper(trim((string)($_POST['decision'] ?? '')));
     $zoomLink = trim((string)($_POST['zoom_link'] ?? ''));
 
-    if (!preg_match('/^[0-9a-fA-F-]{36}$/', $id)) {
+    if ($id === '' || strlen($id) > 80) {
         magx_json_response(['success' => false, 'message' => 'Invalid appointment id.'], 422);
     }
     if (!in_array($decision, ['APPROVE', 'REJECT'], true)) {

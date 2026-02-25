@@ -1407,6 +1407,13 @@ if (!magx_is_admin_authenticated()) {
                     var msg = "Approval failed.";
                     if(xhr && xhr.responseJSON && xhr.responseJSON.message){
                         msg = String(xhr.responseJSON.message);
+                    } else if (xhr && xhr.responseText) {
+                        try {
+                            var parsed = JSON.parse(xhr.responseText);
+                            if (parsed && parsed.message) {
+                                msg = String(parsed.message);
+                            }
+                        } catch (e) {}
                     }
                     $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger").text(msg);
                     $btn.prop("disabled", false).text("Approve");
