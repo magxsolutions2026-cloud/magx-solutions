@@ -21,8 +21,10 @@ if (!function_exists('magx_json_response')) {
 if (!function_exists('magx_appointment_config')) {
     function magx_appointment_config(): array
     {
-        $start = trim((string)(getenv('APPOINTMENT_BUSINESS_HOUR_START') ?: '09:00'));
-        $end = trim((string)(getenv('APPOINTMENT_BUSINESS_HOUR_END') ?: '17:00'));
+        $startRaw = trim((string)(getenv('APPOINTMENT_BUSINESS_HOUR_START') ?: '09:00'));
+        $endRaw = trim((string)(getenv('APPOINTMENT_BUSINESS_HOUR_END') ?: '17:00'));
+        $start = magx_appointment_normalize_time($startRaw) ?: '09:00';
+        $end = magx_appointment_normalize_time($endRaw) ?: '17:00';
         $slotMinutes = (int)(getenv('APPOINTMENT_SLOT_MINUTES') ?: 30);
         $slotMinutes = in_array($slotMinutes, [15, 30, 45, 60], true) ? $slotMinutes : 30;
         $capacity = max(1, (int)(getenv('APPOINTMENT_SLOT_CAPACITY') ?: 1));
@@ -38,6 +40,54 @@ if (!function_exists('magx_appointment_config')) {
             'slot_capacity' => $capacity,
             'timezone' => $timezone,
         ];
+    }
+}
+
+if (!function_exists('magx_appointment_normalize_time')) {
+    function magx_appointment_normalize_time(string $raw): ?string
+    {
+        $v = strtolower(trim($raw));
+        if ($v === '') {
+            return null;
+        }
+
+        // Remove spaces and dots (e.g., "8:00 p.m." -> "8:00pm")
+        $v = str_replace([' ', '.'], '', $v);
+
+        // 24h "H" or "HH" (e.g., "20")
+        if (preg_match('/^\d{1,2}$/', $v)) {
+            $h = (int)$v;
+            if ($h >= 0 && $h <= 23) {
+                return str_pad((string)$h, 2, '0', STR_PAD_LEFT) . ':00';
+            }
+        }
+
+        // 24h "H:MM" or "HH:MM"
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $v, $m)) {
+            $h = (int)$m[1];
+            $mi = (int)$m[2];
+            if ($h >= 0 && $h <= 23 && $mi >= 0 && $mi <= 59) {
+                return str_pad((string)$h, 2, '0', STR_PAD_LEFT) . ':' . str_pad((string)$mi, 2, '0', STR_PAD_LEFT);
+            }
+        }
+
+        // 12h with am/pm (e.g., "8pm", "8:30am")
+        if (preg_match('/^(\d{1,2})(?::(\d{2}))?(am|pm)$/', $v, $m)) {
+            $h = (int)$m[1];
+            $mi = isset($m[2]) ? (int)$m[2] : 0;
+            $ampm = $m[3];
+            if ($h < 1 || $h > 12 || $mi < 0 || $mi > 59) {
+                return null;
+            }
+            if ($ampm === 'am') {
+                $h = ($h === 12) ? 0 : $h;
+            } else {
+                $h = ($h === 12) ? 12 : ($h + 12);
+            }
+            return str_pad((string)$h, 2, '0', STR_PAD_LEFT) . ':' . str_pad((string)$mi, 2, '0', STR_PAD_LEFT);
+        }
+
+        return null;
     }
 }
 

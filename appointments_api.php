@@ -25,6 +25,12 @@ if ($action === 'AVAILABLE_SLOTS') {
     if (!magx_appointment_date_valid($date)) {
         magx_json_response(['success' => false, 'message' => 'Invalid date'], 422);
     }
+    if (empty($slots)) {
+        magx_json_response([
+            'success' => false,
+            'message' => 'No available slot configuration. Check APPOINTMENT_BUSINESS_HOUR_START/APPOINTMENT_BUSINESS_HOUR_END.',
+        ], 422);
+    }
 
     $result = [];
     foreach ($slots as $slot) {
