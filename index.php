@@ -152,6 +152,13 @@ function renderHomeScrollIndicator() {
     <?php
 }
 
+$magxRobotVideoSrc = '';
+if (file_exists(__DIR__ . '/robotwhole.MP4')) {
+    $magxRobotVideoSrc = 'robotwhole.MP4';
+} elseif (file_exists(__DIR__ . '/robotwhole.mp4')) {
+    $magxRobotVideoSrc = 'robotwhole.mp4';
+}
+
 // Avoid browser "Confirm Form Resubmission" by using POST-Redirect-GET.
 // Also handle the side-nav Admin login form here.
 if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_METHOD']) === 'POST') {
@@ -258,6 +265,10 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	    <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>MAGX Solutions</title>
 	        <link rel="icon" type="png" href="withbacklogo.jpg">
+            <link rel="preload" href="vidbg.mp4" as="video" type="video/mp4">
+            <?php if ($magxRobotVideoSrc !== ''): ?>
+            <link rel="preload" href="<?php echo htmlspecialchars($magxRobotVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" as="video" type="video/mp4">
+            <?php endif; ?>
 	        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" onerror="this.href='assets/css/bootstrap.min.css';">
 	        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 	        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600&display=swap">
@@ -2159,6 +2170,39 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
         .modal.modern-sheet .btn-close{
             filter: invert(1);
             opacity: 0.9;
+        }
+
+        #appointmentModal .form-label{
+            color: rgba(255,255,255,0.9);
+            letter-spacing: .02em;
+        }
+
+        #appointmentModal .form-control,
+        #appointmentModal .form-select,
+        #appointmentModal textarea.form-control{
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+            color: rgba(255,255,255,0.95);
+            box-shadow: none;
+        }
+
+        #appointmentModal .form-control::placeholder,
+        #appointmentModal textarea.form-control::placeholder{
+            color: rgba(255,255,255,0.58);
+        }
+
+        #appointmentModal .form-control:focus,
+        #appointmentModal .form-select:focus,
+        #appointmentModal textarea.form-control:focus{
+            border-color: rgba(78, 163, 255, 0.72);
+            box-shadow: 0 0 0 3px rgba(29, 124, 255, 0.22);
+            background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
+            color: rgba(255,255,255,0.96);
+        }
+
+        #appointmentModal .form-select option{
+            color: #0f172a;
         }
 
         /* Share UI */
@@ -6924,16 +6968,8 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 		                        <div class="hero-media" aria-label="MAGX robot video">
 		                            <div class="hero-media-card">
 		                                <video class="hero-robot-video smooth-loop-video magx-lock-video" autoplay muted playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nofullscreen noremoteplayback nodownload" oncontextmenu="return false;" data-overlap="0.8" poster="logomagx.png">
-		                                    <?php
-		                                    $robotVideoSrc = '';
-		                                    if (file_exists(__DIR__ . '/robotwhole.MP4')) {
-		                                        $robotVideoSrc = 'robotwhole.MP4';
-		                                    } elseif (file_exists(__DIR__ . '/robotwhole.mp4')) {
-		                                        $robotVideoSrc = 'robotwhole.mp4';
-		                                    }
-		                                    if ($robotVideoSrc !== ''):
-		                                    ?>
-		                                    <source src="<?php echo htmlspecialchars($robotVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+		                                    <?php if ($magxRobotVideoSrc !== ''): ?>
+		                                    <source src="<?php echo htmlspecialchars($magxRobotVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
 		                                    <?php endif; ?>
 		                                </video>
 		                                <svg class="hero-neon-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
@@ -7572,6 +7608,26 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
             </div>
         </div>
 
+        <div class="modal fade modern-sheet" id="appointmentSubmissionModal" tabindex="-1" aria-labelledby="appointmentSubmissionModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title fs-5" id="appointmentSubmissionModalLabel">
+                            <div class="title-main">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                                <span>Request Submitted</span>
+                            </div>
+                            <div class="title-sub">Appointment booking status</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0" id="appointmentSubmissionModalMessage">Your appointment request has been submitted and is pending admin approval.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Home Post Comment Modal -->
         <div class="modal fade modern-sheet" id="postCommentModal" tabindex="-1" aria-labelledby="postCommentModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -8196,6 +8252,8 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                const modalEl = document.getElementById("appointmentModal");
 	                if(!modalEl || typeof bootstrap === "undefined"){ return; }
 	                const modal = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true });
+                    const submissionModalEl = document.getElementById("appointmentSubmissionModal");
+                    const submissionModal = submissionModalEl ? bootstrap.Modal.getOrCreateInstance(submissionModalEl, { backdrop: true, keyboard: true }) : null;
 	                const $form = $("#appointmentForm");
 	                const $date = $("#bookDate");
 	                const $time = $("#bookTime");
@@ -8407,10 +8465,14 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                                setFeedback("Your appointment request has been submitted and is pending admin approval.", false);
 	                                $submit.text("Submitted");
 	                                loadSlotsForDate(check.values.preferred_date);
+                                    if (submissionModal) {
+                                        $("#appointmentSubmissionModalMessage").text("Your appointment request has been submitted and is pending admin approval.");
+                                        submissionModal.show();
+                                    }
 	                                setTimeout(function(){
 	                                    modal.hide();
 	                                    $submit.prop("disabled", false).text("Submit Request");
-	                                }, 1200);
+	                                }, 300);
 	                                return;
 	                            }
 	                            if(res && res.errors){ applyServerValidationErrors(res.errors); }

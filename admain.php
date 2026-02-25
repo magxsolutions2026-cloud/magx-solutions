@@ -672,6 +672,26 @@ if (!magx_is_admin_authenticated()) {
                         flex:1;
                     }
                 }
+                #magxActionModal .modal-content,
+                #magxConfirmModal .modal-content{
+                    border: 1px solid rgba(255,255,255,0.16);
+                    background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95));
+                    color: rgba(255,255,255,0.93);
+                    box-shadow: 0 28px 80px rgba(0,0,0,0.55);
+                }
+                #magxActionModal .modal-header,
+                #magxConfirmModal .modal-header{
+                    border-bottom: 1px solid rgba(255,255,255,0.10);
+                    background: linear-gradient(90deg, #102448, #1d3f73);
+                }
+                #magxActionModal .modal-footer,
+                #magxConfirmModal .modal-footer{
+                    border-top: 1px solid rgba(255,255,255,0.10);
+                }
+                #magxActionModal .btn-close,
+                #magxConfirmModal .btn-close{
+                    filter: invert(1);
+                }
         </style>
         <link rel="stylesheet" href="assets/css/admin-unified-theme.css?v=20260217">
     </head>
@@ -1159,6 +1179,41 @@ if (!magx_is_admin_authenticated()) {
             </div>
         </div>
 
+        <div class="modal fade" id="magxActionModal" tabindex="-1" aria-labelledby="magxActionModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="magxActionModalLabel">Notice</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="magxActionModalMessage" class="mb-0"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn" style="background:#1d7cff; color:white;" data-bs-dismiss="modal">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="magxConfirmModal" tabindex="-1" aria-labelledby="magxConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="magxConfirmModalLabel">Confirm Action</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="magxConfirmModalMessage" class="mb-0"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="magxConfirmCancelBtn" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn" style="background:#1d7cff; color:white;" id="magxConfirmOkBtn">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
 
 
@@ -1184,12 +1239,69 @@ if (!magx_is_admin_authenticated()) {
     let homePostsViewMode = "card";
     let contactsViewMode = "card";
     let appointmentsViewMode = "card";
+    let magxActionModal = null;
+    let magxConfirmModal = null;
 
     function normalizeText(value) {
         return String(value || "").toLowerCase();
     }
 
+    function magxInitFeedbackModals() {
+        if (typeof bootstrap === "undefined") { return; }
+        var actionEl = document.getElementById("magxActionModal");
+        var confirmEl = document.getElementById("magxConfirmModal");
+        if (actionEl && !magxActionModal) {
+            magxActionModal = bootstrap.Modal.getOrCreateInstance(actionEl, { backdrop: true, keyboard: true });
+        }
+        if (confirmEl && !magxConfirmModal) {
+            magxConfirmModal = bootstrap.Modal.getOrCreateInstance(confirmEl, { backdrop: true, keyboard: true });
+        }
+    }
+
+    function magxNotify(message, title) {
+        magxInitFeedbackModals();
+        if (!magxActionModal) {
+            return;
+        }
+        $("#magxActionModalLabel").text(title || "Notice");
+        $("#magxActionModalMessage").text(String(message || ""));
+        magxActionModal.show();
+    }
+
+    function magxConfirm(message, title) {
+        magxInitFeedbackModals();
+        if (!magxConfirmModal) {
+            return Promise.resolve(window.confirm(String(message || "Confirm?")));
+        }
+        return new Promise(function(resolve) {
+            var resolved = false;
+            function done(v) {
+                if (resolved) { return; }
+                resolved = true;
+                $("#magxConfirmOkBtn").off("click", onOk);
+                $("#magxConfirmModal").off("hidden.bs.modal", onHide);
+                resolve(v);
+            }
+            function onOk() {
+                magxConfirmModal.hide();
+                done(true);
+            }
+            function onHide() {
+                done(false);
+            }
+            $("#magxConfirmModalLabel").text(title || "Confirm Action");
+            $("#magxConfirmModalMessage").text(String(message || ""));
+            $("#magxConfirmOkBtn").off("click", onOk).on("click", onOk);
+            $("#magxConfirmModal").off("hidden.bs.modal", onHide).on("hidden.bs.modal", onHide);
+            magxConfirmModal.show();
+        });
+    }
+
     $(document).ready(function(){
+        magxInitFeedbackModals();
+        window.alert = function(message){
+            magxNotify(message, "Notice");
+        };
         $("#home_posts").show();
         $("#contacts_section").hide();
         $("#appointments_section").hide();
@@ -1402,7 +1514,7 @@ if (!magx_is_admin_authenticated()) {
                     if(res && res.success){
                         var serverMsg = (res && res.message) ? String(res.message) : "Appointment approved.";
                         $("#appointmentDecisionFeedback").removeClass("text-danger").addClass("text-success").text(serverMsg);
-                        alert(serverMsg);
+                        magxNotify(serverMsg, "Appointment Update");
                         setTimeout(function(){
                             $("#appointmentDecisionModal").modal('hide');
                             loadAppointments();
@@ -2282,16 +2394,16 @@ if (!magx_is_admin_authenticated()) {
             var p = pendingRes && pendingRes[0] ? pendingRes[0] : null;
             var a = approvedRes && approvedRes[0] ? approvedRes[0] : null;
             if (!p || !p.success) {
-                alert("Error loading pending appointments: " + ((p && p.message) ? p.message : "Request failed"));
+                magxNotify("Error loading pending appointments: " + ((p && p.message) ? p.message : "Request failed"), "Appointments");
                 return;
             }
             if (!a || !a.success) {
-                alert("Error loading approved schedule: " + ((a && a.message) ? a.message : "Request failed"));
+                magxNotify("Error loading approved schedule: " + ((a && a.message) ? a.message : "Request failed"), "Appointments");
                 return;
             }
             displayAppointments(p.data || [], a.data || []);
         }).fail(function(){
-            alert("Error loading appointments!");
+            magxNotify("Error loading appointments!", "Appointments");
         });
     }
 
@@ -2419,62 +2531,66 @@ if (!magx_is_admin_authenticated()) {
     };
 
     window.rejectAppointment = function(id) {
-        if (!confirm("Reject this appointment request?")) {
-            return;
-        }
-        $.ajax({
-            url: "appointments_admin_api.php",
-            method: "POST",
-            dataType: "json",
-            data: {
-                action: "DECIDE",
-                id: id,
-                decision: "REJECT"
-            },
-            success: function(res) {
-                if (res && res.success) {
-                    loadAppointments();
-                } else {
-                    alert("Error: " + ((res && res.message) ? res.message : "Request failed"));
-                }
-            },
-            error: function(xhr) {
-                var msg = "Rejection failed.";
-                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-                alert(msg);
+        magxConfirm("Reject this appointment request?", "Reject Appointment").then(function(ok){
+            if (!ok) {
+                return;
             }
+            $.ajax({
+                url: "appointments_admin_api.php",
+                method: "POST",
+                dataType: "json",
+                data: {
+                    action: "DECIDE",
+                    id: id,
+                    decision: "REJECT"
+                },
+                success: function(res) {
+                    if (res && res.success) {
+                        loadAppointments();
+                    } else {
+                        magxNotify("Error: " + ((res && res.message) ? res.message : "Request failed"), "Reject Appointment");
+                    }
+                },
+                error: function(xhr) {
+                    var msg = "Rejection failed.";
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    magxNotify(msg, "Reject Appointment");
+                }
+            });
         });
     };
 
     window.cancelApprovedAppointment = function(id) {
-        if (!confirm("Cancel this approved appointment schedule?")) {
-            return;
-        }
-        $.ajax({
-            url: "appointments_admin_api.php",
-            method: "POST",
-            dataType: "json",
-            data: {
-                action: "CANCEL_APPROVED",
-                id: id
-            },
-            success: function(res) {
-                if (res && res.success) {
-                    alert((res && res.message) ? res.message : "Approved appointment cancelled.");
-                    loadAppointments();
-                } else {
-                    alert("Error: " + ((res && res.message) ? res.message : "Request failed"));
-                }
-            },
-            error: function(xhr) {
-                var msg = "Cancel failed.";
-                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-                alert(msg);
+        magxConfirm("Cancel this approved appointment schedule?", "Cancel Schedule").then(function(ok){
+            if (!ok) {
+                return;
             }
+            $.ajax({
+                url: "appointments_admin_api.php",
+                method: "POST",
+                dataType: "json",
+                data: {
+                    action: "CANCEL_APPROVED",
+                    id: id
+                },
+                success: function(res) {
+                    if (res && res.success) {
+                        magxNotify((res && res.message) ? res.message : "Approved appointment cancelled.", "Cancel Schedule");
+                        loadAppointments();
+                    } else {
+                        magxNotify("Error: " + ((res && res.message) ? res.message : "Request failed"), "Cancel Schedule");
+                    }
+                },
+                error: function(xhr) {
+                    var msg = "Cancel failed.";
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    magxNotify(msg, "Cancel Schedule");
+                }
+            });
         });
     };
 
