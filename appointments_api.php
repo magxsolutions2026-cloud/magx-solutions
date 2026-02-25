@@ -159,9 +159,23 @@ if ($action === 'SUBMIT') {
         );
 
         $db->commit();
+        $alertRes = magx_send_appointment_pending_alert_email([
+            'full_name' => $fullName,
+            'email' => $email,
+            'phone' => $phone,
+            'preferred_date' => $effectiveDate,
+            'preferred_time' => $time,
+            'service_type' => $serviceType,
+            'notes' => $notes,
+        ]);
+
+        $msg = 'Your appointment request has been submitted and is pending admin approval.';
+        if (!$alertRes['success']) {
+            $msg .= ' (Admin alert not sent: ' . (string)$alertRes['message'] . ')';
+        }
         magx_json_response([
             'success' => true,
-            'message' => 'Your appointment request has been submitted and is pending admin approval.',
+            'message' => $msg,
         ]);
     } catch (Throwable $e) {
         if ($db->inTransaction()) {

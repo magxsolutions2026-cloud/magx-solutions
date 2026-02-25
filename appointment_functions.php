@@ -62,11 +62,12 @@ if (!function_exists('magx_appointment_normalize_time')) {
             }
         }
 
-        // 24h "H:MM" or "HH:MM"
-        if (preg_match('/^(\d{1,2}):(\d{2})$/', $v, $m)) {
+        // 24h "H:MM", "HH:MM", with optional seconds
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $v, $m)) {
             $h = (int)$m[1];
             $mi = (int)$m[2];
-            if ($h >= 0 && $h <= 23 && $mi >= 0 && $mi <= 59) {
+            $sec = isset($m[3]) ? (int)$m[3] : 0;
+            if ($h >= 0 && $h <= 23 && $mi >= 0 && $mi <= 59 && $sec >= 0 && $sec <= 59) {
                 return str_pad((string)$h, 2, '0', STR_PAD_LEFT) . ':' . str_pad((string)$mi, 2, '0', STR_PAD_LEFT);
             }
         }
@@ -186,10 +187,11 @@ if (!function_exists('magx_appointment_slots')) {
 if (!function_exists('magx_appointment_human_time')) {
     function magx_appointment_human_time(string $hhmm): string
     {
-        if (!magx_appointment_time_valid($hhmm)) {
+        $normalized = magx_appointment_normalize_time($hhmm);
+        if ($normalized === null || !magx_appointment_time_valid($normalized)) {
             return $hhmm;
         }
-        [$h, $m] = array_map('intval', explode(':', $hhmm));
+        [$h, $m] = array_map('intval', explode(':', $normalized));
         $ampm = $h >= 12 ? 'PM' : 'AM';
         $h12 = $h % 12;
         if ($h12 === 0) {
@@ -204,7 +206,11 @@ if (!function_exists('magx_appointment_datetime_iso')) {
     {
         try {
             $tz = new DateTimeZone($timezone ?: 'UTC');
-            $dt = new DateTime($date . ' ' . $time . ':00', $tz);
+            $normalized = magx_appointment_normalize_time($time);
+            if ($normalized === null) {
+                return null;
+            }
+            $dt = new DateTime($date . ' ' . $normalized . ':00', $tz);
             return $dt->format(DateTimeInterface::ATOM);
         } catch (Throwable $e) {
             return null;
@@ -556,7 +562,11 @@ if (!function_exists('magx_create_outlook_calendar_event')) {
         $duration = max(15, (int)(getenv('APPOINTMENT_SLOT_MINUTES') ?: 30));
 
         try {
-            $start = new DateTime((string)$appointment['preferred_date'] . ' ' . (string)$appointment['preferred_time'] . ':00', new DateTimeZone($timezone));
+            $normalizedTime = magx_appointment_normalize_time((string)$appointment['preferred_time']);
+            if ($normalizedTime === null) {
+                return ['success' => false, 'message' => 'Invalid appointment time format for Outlook calendar.'];
+            }
+            $start = new DateTime((string)$appointment['preferred_date'] . ' ' . $normalizedTime . ':00', new DateTimeZone($timezone));
             $end = (clone $start)->modify('+' . $duration . ' minutes');
         } catch (Throwable $e) {
             return ['success' => false, 'message' => 'Invalid appointment datetime for Outlook calendar.'];
@@ -625,7 +635,8 @@ if (!function_exists('magx_build_add_to_calendar_links')) {
     function magx_build_add_to_calendar_links(array $appointment, string $zoomLink, string $timezone): array
     {
         $duration = max(15, (int)(getenv('APPOINTMENT_SLOT_MINUTES') ?: 30));
-        $start = new DateTime((string)$appointment['preferred_date'] . ' ' . (string)$appointment['preferred_time'] . ':00', new DateTimeZone($timezone));
+        $normalizedTime = magx_appointment_normalize_time((string)$appointment['preferred_time']) ?: '00:00';
+        $start = new DateTime((string)$appointment['preferred_date'] . ' ' . $normalizedTime . ':00', new DateTimeZone($timezone));
         $end = (clone $start)->modify('+' . $duration . ' minutes');
 
         $title = 'Appointment - ' . (string)$appointment['full_name'];
@@ -669,7 +680,7 @@ if (!function_exists('magx_send_appointment_approval_emails')) {
         $smtpPort = (int)(getenv('SMTP_PORT') ?: 587);
         $smtpUser = (string)(getenv('SMTP_USER') ?: '');
         $smtpPass = (string)(getenv('SMTP_PASSWORD') ?: '');
-        $fromEmail = (string)(getenv('SMTP_FROM_EMAIL') ?: '');
+        $fromEmail = (string)(getenv('SMTP_FROM_EMAIL') ?: getenv('SMTP_USER') ?: '');
         $fromName = (string)(getenv('SMTP_FROM_NAME') ?: 'MAGX Solutions');
         $adminEmail = (string)(getenv('ADMIN_NOTIFICATION_EMAIL') ?: $fromEmail);
 
@@ -730,6 +741,51 @@ if (!function_exists('magx_send_appointment_approval_emails')) {
             return ['success' => true];
         } catch (PHPMailerException $e) {
             return ['success' => false, 'message' => 'Gmail delivery failed: ' . $e->getMessage()];
+        }
+    }
+}
+
+if (!function_exists('magx_send_appointment_pending_alert_email')) {
+    function magx_send_appointment_pending_alert_email(array $appointment): array
+    {
+        $smtpHost = (string)(getenv('SMTP_HOST') ?: '');
+        $smtpPort = (int)(getenv('SMTP_PORT') ?: 587);
+        $smtpUser = (string)(getenv('SMTP_USER') ?: '');
+        $smtpPass = (string)(getenv('SMTP_PASSWORD') ?: '');
+        $fromEmail = (string)(getenv('SMTP_FROM_EMAIL') ?: getenv('SMTP_USER') ?: '');
+        $fromName = (string)(getenv('SMTP_FROM_NAME') ?: 'MAGX Solutions');
+        $adminEmail = (string)(getenv('ADMIN_NOTIFICATION_EMAIL') ?: 'magxsolutions2026@gmail.com');
+
+        if ($smtpHost === '' || $smtpUser === '' || $smtpPass === '' || $fromEmail === '' || $adminEmail === '') {
+            return ['success' => false, 'message' => 'SMTP admin alert configuration is missing.'];
+        }
+
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = $smtpHost;
+            $mail->SMTPAuth = true;
+            $mail->Username = $smtpUser;
+            $mail->Password = $smtpPass;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = $smtpPort;
+            $mail->setFrom($fromEmail, $fromName);
+            $mail->addAddress($adminEmail, 'Admin');
+            $mail->isHTML(true);
+            $mail->Subject = 'New Appointment Request Submitted';
+            $mail->Body =
+                '<p>A new appointment request was submitted and is pending approval.</p>' .
+                '<p><strong>Name:</strong> ' . htmlspecialchars((string)($appointment['full_name'] ?? ''), ENT_QUOTES, 'UTF-8') . '<br>' .
+                '<strong>Gmail:</strong> ' . htmlspecialchars((string)($appointment['email'] ?? ''), ENT_QUOTES, 'UTF-8') . '<br>' .
+                '<strong>Phone:</strong> ' . htmlspecialchars((string)($appointment['phone'] ?? ''), ENT_QUOTES, 'UTF-8') . '<br>' .
+                '<strong>Date:</strong> ' . htmlspecialchars((string)($appointment['preferred_date'] ?? ''), ENT_QUOTES, 'UTF-8') . '<br>' .
+                '<strong>Time:</strong> ' . htmlspecialchars(magx_appointment_human_time((string)($appointment['preferred_time'] ?? '')), ENT_QUOTES, 'UTF-8') . '<br>' .
+                '<strong>Service:</strong> ' . htmlspecialchars((string)($appointment['service_type'] ?? ''), ENT_QUOTES, 'UTF-8') . '<br>' .
+                '<strong>Notes:</strong> ' . nl2br(htmlspecialchars((string)($appointment['notes'] ?? ''), ENT_QUOTES, 'UTF-8')) . '</p>';
+            $mail->send();
+            return ['success' => true];
+        } catch (PHPMailerException $e) {
+            return ['success' => false, 'message' => 'Admin alert Gmail failed: ' . $e->getMessage()];
         }
     }
 }

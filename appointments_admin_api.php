@@ -108,6 +108,23 @@ if ($action === 'DECIDE') {
 
     if ((string)$appointment['status'] !== 'pending') {
         if ((string)$appointment['status'] === 'approved') {
+            if ($decision === 'APPROVE') {
+                $resendZoom = $zoomLink !== '' ? $zoomLink : (string)($appointment['zoom_link'] ?? '');
+                if ($resendZoom === '') {
+                    $resendZoom = trim((string)(getenv('DEFAULT_ZOOM_MEETING_LINK') ?: ''));
+                }
+                if ($resendZoom === '') {
+                    $resendZoom = 'https://zoom.us/j/' . random_int(1000000000, 9999999999);
+                }
+                $timezone = (string)(magx_appointment_config()['timezone'] ?? 'UTC');
+                $links = magx_build_add_to_calendar_links($appointment, $resendZoom, $timezone);
+                $resend = magx_send_appointment_approval_emails($appointment, $links, $resendZoom, $timezone);
+                if ($resend['success']) {
+                    magx_db_execute($db, "UPDATE appointments SET zoom_link = :z WHERE id = :id", [':z' => $resendZoom, ':id' => $id]);
+                    magx_json_response(['success' => true, 'message' => 'Appointment already approved. Client notification was resent.']);
+                }
+                magx_json_response(['success' => false, 'message' => 'Appointment already approved, but resend failed: ' . (string)$resend['message']], 500);
+            }
             magx_json_response(['success' => true, 'message' => 'Appointment is already approved.']);
         }
         if ((string)$appointment['status'] === 'rejected') {
