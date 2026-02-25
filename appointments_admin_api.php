@@ -73,6 +73,12 @@ if ($action === 'DECIDE') {
     }
 
     if ((string)$appointment['status'] !== 'pending') {
+        if ((string)$appointment['status'] === 'approved') {
+            magx_json_response(['success' => true, 'message' => 'Appointment is already approved.']);
+        }
+        if ((string)$appointment['status'] === 'rejected') {
+            magx_json_response(['success' => true, 'message' => 'Appointment is already rejected.']);
+        }
         magx_json_response(['success' => false, 'message' => 'Appointment is no longer pending.'], 409);
     }
 
