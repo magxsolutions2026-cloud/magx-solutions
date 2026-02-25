@@ -25,37 +25,6 @@ function magx_outlook_env_ready(): bool {
         trim((string)(getenv('MS_USER_ID') ?: getenv('MS_USER_EMAIL') ?: '')) !== '';
 }
 
-if ($action === 'SUPABASE_LOGIN') {
-    $email = trim((string)($_POST['email'] ?? ''));
-    $password = (string)($_POST['password'] ?? '');
-    if ($email === '' || $password === '') {
-        magx_json_response(['success' => false, 'message' => 'Gmail and password are required.'], 422);
-    }
-
-    $login = magx_supabase_signin_with_password($email, $password);
-    if (!$login['success']) {
-        magx_json_response(['success' => false, 'message' => (string)$login['message']], 403);
-    }
-
-    magx_json_response([
-        'success' => true,
-        'token' => (string)$login['access_token'],
-        'user' => [
-            'id' => (string)($login['user']['id'] ?? ''),
-            'email' => (string)($login['user']['email'] ?? ''),
-        ],
-    ]);
-}
-
-$supabaseToken = trim((string)($_POST['supabase_token'] ?? ''));
-if ($supabaseToken === '') {
-    magx_json_response(['success' => false, 'message' => 'Supabase admin token is required.'], 403);
-}
-$userRes = magx_supabase_user_from_token($supabaseToken);
-if (!$userRes['success'] || !magx_supabase_is_admin_role((array)($userRes['user'] ?? []))) {
-    magx_json_response(['success' => false, 'message' => 'Supabase admin authorization failed.'], 403);
-}
-
 if ($action === 'LOAD_PENDING') {
     $rows = magx_db_execute(
         $db,

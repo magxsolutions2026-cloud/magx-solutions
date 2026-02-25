@@ -775,16 +775,10 @@ if (!magx_is_admin_authenticated()) {
             <div style="margin: 20px 50px;">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <h3 style="color: #672222;">Appointment Approvals</h3>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-light" id="appointmentsConnectBtn">
-                            <i class="fas fa-user-shield"></i> Connect Supabase Admin
-                        </button>
-                        <button type="button" class="btn" style="background: #672222; color: white;" id="appointmentsRefreshBtn">
-                            <i class="fas fa-sync"></i> Refresh
-                        </button>
-                    </div>
+                    <button type="button" class="btn" style="background: #672222; color: white;" id="appointmentsRefreshBtn">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
                 </div>
-                <div id="appointmentsAuthStatus" class="small text-light mb-2">Supabase admin token not connected.</div>
                 <div class="record-toolbar">
                     <input type="text" class="form-control record-search-input" id="appointmentsSearchInput" placeholder="Search by client, Gmail, date, time, or service...">
                     <button type="button" class="btn btn-outline-light record-view-toggle" id="appointmentsViewToggle">
@@ -1073,34 +1067,6 @@ if (!magx_is_admin_authenticated()) {
             </div>
         </div>
 
-        <div class="modal fade" id="supabaseAdminModal" tabindex="-1" aria-labelledby="supabaseAdminModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header" style="background: linear-gradient(90deg, #672222, #8c2f2f); color: white;">
-                        <h5 class="modal-title" id="supabaseAdminModalLabel">Supabase Admin Gmail Authentication</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="supabaseAdminForm">
-                            <div class="mb-3">
-                                <label style="color: #672222; font-weight:bold;" for="supabaseAdminEmail" class="form-label">Gmail</label>
-                                <input type="email" class="form-control" id="supabaseAdminEmail" placeholder="admin@gmail.com" required>
-                            </div>
-                            <div class="mb-3">
-                                <label style="color: #672222; font-weight:bold;" for="supabaseAdminPassword" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="supabaseAdminPassword" required>
-                            </div>
-                            <div id="supabaseAdminAuthFeedback" class="small"></div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn" style="background: #672222; color: white;" id="supabaseAdminLoginBtn">Authenticate</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="modal fade" id="appointmentDecisionModal" tabindex="-1" aria-labelledby="appointmentDecisionModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -1217,7 +1183,6 @@ if (!magx_is_admin_authenticated()) {
     let homePostsViewMode = "card";
     let contactsViewMode = "card";
     let appointmentsViewMode = "card";
-    let appointmentsAdminToken = "";
 
     function normalizeText(value) {
         return String(value || "").toLowerCase();
@@ -1228,7 +1193,6 @@ if (!magx_is_admin_authenticated()) {
         $("#contacts_section").hide();
         $("#appointments_section").hide();
         loadHomePosts();
-        updateAppointmentsAuthUi();
          // side nav
         $("#sidenav").click(function(){
             $("#mySidenav").css("width", "250px");
@@ -1389,57 +1353,6 @@ if (!magx_is_admin_authenticated()) {
             });
         });
 
-        $("#appointmentsConnectBtn").click(function(){
-            $("#supabaseAdminAuthFeedback").removeClass("text-danger text-success").text("");
-            $("#supabaseAdminForm")[0].reset();
-            $("#supabaseAdminModal").modal('show');
-        });
-
-        $("#supabaseAdminLoginBtn").click(function(){
-            var email = String($("#supabaseAdminEmail").val() || "").trim();
-            var password = String($("#supabaseAdminPassword").val() || "");
-            if(!email || !password){
-                $("#supabaseAdminAuthFeedback").addClass("text-danger").removeClass("text-success").text("Gmail and password are required.");
-                return;
-            }
-
-            var $btn = $("#supabaseAdminLoginBtn");
-            $btn.prop("disabled", true).text("Authenticating...");
-            $.ajax({
-                url: "appointments_admin_api.php",
-                method: "POST",
-                dataType: "json",
-                data: {
-                    action: "SUPABASE_LOGIN",
-                    email: email,
-                    password: password
-                },
-                success: function(res){
-                    if(res && res.success && res.token){
-                        appointmentsAdminToken = String(res.token);
-                        updateAppointmentsAuthUi();
-                        $("#supabaseAdminAuthFeedback").removeClass("text-danger").addClass("text-success").text("Authenticated.");
-                        setTimeout(function(){
-                            $("#supabaseAdminModal").modal('hide');
-                            loadAppointments();
-                        }, 500);
-                    } else {
-                        $("#supabaseAdminAuthFeedback").removeClass("text-success").addClass("text-danger")
-                            .text((res && res.message) ? String(res.message) : "Authentication failed.");
-                    }
-                    $btn.prop("disabled", false).text("Authenticate");
-                },
-                error: function(xhr){
-                    var msg = "Authentication failed.";
-                    if(xhr && xhr.responseJSON && xhr.responseJSON.message){
-                        msg = String(xhr.responseJSON.message);
-                    }
-                    $("#supabaseAdminAuthFeedback").removeClass("text-success").addClass("text-danger").text(msg);
-                    $btn.prop("disabled", false).text("Authenticate");
-                }
-            });
-        });
-
         $("#appointmentsRefreshBtn").click(function(){
             loadAppointments();
         });
@@ -1475,8 +1388,7 @@ if (!magx_is_admin_authenticated()) {
                     action: "DECIDE",
                     id: appointmentId,
                     decision: "APPROVE",
-                    zoom_link: zoomLink,
-                    supabase_token: appointmentsAdminToken
+                    zoom_link: zoomLink
                 },
                 success: function(res){
                     if(res && res.success){
@@ -2335,48 +2247,22 @@ if (!magx_is_admin_authenticated()) {
         });
     }
 
-    function updateAppointmentsAuthUi() {
-        if (appointmentsAdminToken) {
-            $("#appointmentsAuthStatus").removeClass("text-warning").addClass("text-success").text("Supabase admin authenticated.");
-            $("#appointmentsConnectBtn").html('<i class="fas fa-check-circle"></i> Supabase Connected');
-        } else {
-            $("#appointmentsAuthStatus").removeClass("text-success").addClass("text-warning").text("Supabase admin token not connected.");
-            $("#appointmentsConnectBtn").html('<i class="fas fa-user-shield"></i> Connect Supabase Admin');
-        }
-    }
-
     function loadAppointments() {
-        if (!appointmentsAdminToken) {
-            appointmentRecords = [];
-            renderAppointments();
-            updateAppointmentsAuthUi();
-            return;
-        }
-
         $.ajax({
             url: "appointments_admin_api.php",
             method: "POST",
             dataType: "json",
             data: {
-                action: "LOAD_PENDING",
-                supabase_token: appointmentsAdminToken
+                action: "LOAD_PENDING"
             },
             success: function(response) {
                 if (response && response.success) {
                     displayAppointments(response.data || []);
                     return;
                 }
-                if (response && response.message && String(response.message).toLowerCase().indexOf("authorization") > -1) {
-                    appointmentsAdminToken = "";
-                    updateAppointmentsAuthUi();
-                }
                 alert("Error loading appointments: " + ((response && response.message) ? response.message : "Request failed"));
             },
-            error: function(xhr) {
-                if (xhr && xhr.status === 403) {
-                    appointmentsAdminToken = "";
-                    updateAppointmentsAuthUi();
-                }
+            error: function() {
                 alert("Error loading appointments!");
             }
         });
@@ -2413,13 +2299,6 @@ if (!magx_is_admin_authenticated()) {
                 .replace(/>/g, '&gt;')
                 .replace(/\"/g, '&quot;')
                 .replace(/'/g, '&#39;');
-        }
-
-        if (!appointmentsAdminToken) {
-            html += '<div class="empty-records">Connect a Supabase admin account to manage appointment approvals.</div>';
-            html += '</div>';
-            $("#appointments_table").html(html);
-            return;
         }
 
         if (records.length === 0) {
@@ -2464,10 +2343,6 @@ if (!magx_is_admin_authenticated()) {
     };
 
     window.rejectAppointment = function(id) {
-        if (!appointmentsAdminToken) {
-            alert("Connect Supabase admin first.");
-            return;
-        }
         if (!confirm("Reject this appointment request?")) {
             return;
         }
@@ -2478,8 +2353,7 @@ if (!magx_is_admin_authenticated()) {
             data: {
                 action: "DECIDE",
                 id: id,
-                decision: "REJECT",
-                supabase_token: appointmentsAdminToken
+                decision: "REJECT"
             },
             success: function(res) {
                 if (res && res.success) {
