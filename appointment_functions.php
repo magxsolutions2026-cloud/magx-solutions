@@ -59,6 +59,31 @@ if (!function_exists('magx_appointment_date_valid')) {
     }
 }
 
+if (!function_exists('magx_appointment_add_days')) {
+    function magx_appointment_add_days(string $date, int $days): ?string
+    {
+        if (!magx_appointment_date_valid($date)) {
+            return null;
+        }
+        try {
+            $dt = new DateTime($date);
+            if ($days !== 0) {
+                $dt->modify(($days > 0 ? '+' : '') . $days . ' day');
+            }
+            return $dt->format('Y-m-d');
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+}
+
+if (!function_exists('magx_appointment_effective_date')) {
+    function magx_appointment_effective_date(string $baseDate, int $dayOffset): ?string
+    {
+        return magx_appointment_add_days($baseDate, max(0, $dayOffset));
+    }
+}
+
 if (!function_exists('magx_appointment_slots')) {
     function magx_appointment_slots(array $config): array
     {
@@ -72,19 +97,37 @@ if (!function_exists('magx_appointment_slots')) {
         $endMin = ($eh * 60) + $em;
 
         $slot = max(15, (int)$config['slot_minutes']);
-        if ($endMin <= $startMin) {
+        if ($startMin === $endMin) {
             return [];
         }
 
         $out = [];
-        for ($m = $startMin; ($m + $slot) <= $endMin; $m += $slot) {
-            $h = str_pad((string)intdiv($m, 60), 2, '0', STR_PAD_LEFT);
-            $mi = str_pad((string)($m % 60), 2, '0', STR_PAD_LEFT);
-            $time = $h . ':' . $mi;
-            $out[] = [
-                'value' => $time,
-                'label' => magx_appointment_human_time($time),
-            ];
+        $ranges = [];
+
+        // Daytime window (e.g. 09:00 -> 17:00)
+        if ($endMin > $startMin) {
+            $ranges[] = ['from' => $startMin, 'to' => $endMin, 'day_offset' => 0];
+        } else {
+            // Overnight window (e.g. 20:00 -> 03:00)
+            $ranges[] = ['from' => $startMin, 'to' => 24 * 60, 'day_offset' => 0];
+            $ranges[] = ['from' => 0, 'to' => $endMin, 'day_offset' => 1];
+        }
+
+        foreach ($ranges as $range) {
+            for ($m = (int)$range['from']; ($m + $slot) <= (int)$range['to']; $m += $slot) {
+                $h = str_pad((string)intdiv($m, 60), 2, '0', STR_PAD_LEFT);
+                $mi = str_pad((string)($m % 60), 2, '0', STR_PAD_LEFT);
+                $time = $h . ':' . $mi;
+                $label = magx_appointment_human_time($time);
+                if ((int)$range['day_offset'] > 0) {
+                    $label .= ' (+1 day)';
+                }
+                $out[] = [
+                    'value' => $time,
+                    'label' => $label,
+                    'day_offset' => (int)$range['day_offset'],
+                ];
+            }
         }
         return $out;
     }

@@ -17,7 +17,7 @@ $config = magx_appointment_config();
 $slots = magx_appointment_slots($config);
 $slotMap = [];
 foreach ($slots as $slot) {
-    $slotMap[(string)$slot['value']] = (string)$slot['label'];
+    $slotMap[(string)$slot['value']] = $slot;
 }
 
 if ($action === 'AVAILABLE_SLOTS') {
@@ -26,28 +26,27 @@ if ($action === 'AVAILABLE_SLOTS') {
         magx_json_response(['success' => false, 'message' => 'Invalid date'], 422);
     }
 
-    $stmt = magx_db_execute(
-        $db,
-        "SELECT to_char(preferred_time, 'HH24:MI') AS preferred_time, COUNT(*) AS c
-         FROM appointments
-         WHERE preferred_date = :d
-           AND status IN ('pending','approved')
-         GROUP BY preferred_time",
-        [':d' => $date]
-    );
-
-    $booked = [];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        $booked[(string)$row['preferred_time']] = (int)$row['c'];
-    }
-
     $result = [];
     foreach ($slots as $slot) {
         $value = (string)$slot['value'];
-        $count = (int)($booked[$value] ?? 0);
+        $effectiveDate = magx_appointment_effective_date($date, (int)($slot['day_offset'] ?? 0));
+        if ($effectiveDate === null) {
+            continue;
+        }
+        $countStmt = magx_db_execute(
+            $db,
+            "SELECT COUNT(*) AS c
+             FROM appointments
+             WHERE preferred_date = :d
+               AND to_char(preferred_time, 'HH24:MI') = :t
+               AND status IN ('pending','approved')",
+            [':d' => $effectiveDate, ':t' => $value]
+        );
+        $count = (int)($countStmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
         $result[] = [
             'value' => $value,
             'label' => (string)$slot['label'],
+            'effective_date' => $effectiveDate,
             'is_available' => $count < (int)$config['slot_capacity'],
             'remaining' => max(0, (int)$config['slot_capacity'] - $count),
         ];
@@ -87,9 +86,15 @@ if ($action === 'SUBMIT') {
 
     if (empty($errors) && magx_appointment_date_valid($date)) {
         $tz = new DateTimeZone((string)$config['timezone']);
-        $today = new DateTime('today', $tz);
-        $selected = new DateTime($date, $tz);
-        if ($selected < $today) {
+        $slotData = $slotMap[$time] ?? null;
+        $effectiveDate = ($slotData && isset($slotData['day_offset']))
+            ? magx_appointment_effective_date($date, (int)$slotData['day_offset'])
+            : $date;
+        $selectedDateTime = ($effectiveDate !== null)
+            ? DateTime::createFromFormat('Y-m-d H:i:s', $effectiveDate . ' ' . $time . ':00', $tz)
+            : false;
+        $now = new DateTime('now', $tz);
+        if (!$selectedDateTime || $selectedDateTime < $now) {
             $errors['preferred_date'] = 'Preferred date cannot be in the past.';
         }
     }
@@ -102,8 +107,17 @@ if ($action === 'SUBMIT') {
         $db->beginTransaction();
 
         // Advisory lock prevents race conditions for this exact slot.
+        $slotData = $slotMap[$time] ?? null;
+        $effectiveDate = ($slotData && isset($slotData['day_offset']))
+            ? magx_appointment_effective_date($date, (int)$slotData['day_offset'])
+            : null;
+        if ($effectiveDate === null) {
+            $db->rollBack();
+            magx_json_response(['success' => false, 'message' => 'Preferred time slot is not valid.'], 422);
+        }
+
         magx_db_execute($db, 'SELECT pg_advisory_xact_lock(hashtext(:k))', [
-            ':k' => $date . '|' . $time,
+            ':k' => $effectiveDate . '|' . $time,
         ]);
 
         $countStmt = magx_db_execute(
@@ -113,7 +127,7 @@ if ($action === 'SUBMIT') {
              WHERE preferred_date = :d
                AND to_char(preferred_time, 'HH24:MI') = :t
                AND status IN ('pending','approved')",
-            [':d' => $date, ':t' => $time]
+            [':d' => $effectiveDate, ':t' => $time]
         );
         $count = (int)($countStmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
         if ($count >= (int)$config['slot_capacity']) {
@@ -131,7 +145,7 @@ if ($action === 'SUBMIT') {
                 ':fn' => $fullName,
                 ':em' => $email,
                 ':ph' => $phone,
-                ':pd' => $date,
+                ':pd' => $effectiveDate,
                 ':pt' => $time,
                 ':st' => $serviceType,
                 ':nt' => $notes,
