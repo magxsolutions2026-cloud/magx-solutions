@@ -76,7 +76,7 @@ if ($action === 'SUBMIT') {
         $errors['full_name'] = 'Full name is required.';
     }
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = 'A valid email address is required.';
+        $errors['email'] = 'A valid Gmail address is required.';
     }
     if (!magx_appointment_date_valid($date)) {
         $errors['preferred_date'] = 'Preferred date is invalid.';

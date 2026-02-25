@@ -786,7 +786,7 @@ if (!magx_is_admin_authenticated()) {
                 </div>
                 <div id="appointmentsAuthStatus" class="small text-light mb-2">Supabase admin token not connected.</div>
                 <div class="record-toolbar">
-                    <input type="text" class="form-control record-search-input" id="appointmentsSearchInput" placeholder="Search by client, email, date, time, or service...">
+                    <input type="text" class="form-control record-search-input" id="appointmentsSearchInput" placeholder="Search by client, Gmail, date, time, or service...">
                     <button type="button" class="btn btn-outline-light record-view-toggle" id="appointmentsViewToggle">
                         <i class="fas fa-list"></i> List View
                     </button>
@@ -1077,14 +1077,14 @@ if (!magx_is_admin_authenticated()) {
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header" style="background: linear-gradient(90deg, #672222, #8c2f2f); color: white;">
-                        <h5 class="modal-title" id="supabaseAdminModalLabel">Supabase Admin Authentication</h5>
+                        <h5 class="modal-title" id="supabaseAdminModalLabel">Supabase Admin Gmail Authentication</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form id="supabaseAdminForm">
                             <div class="mb-3">
-                                <label style="color: #672222; font-weight:bold;" for="supabaseAdminEmail" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="supabaseAdminEmail" required>
+                                <label style="color: #672222; font-weight:bold;" for="supabaseAdminEmail" class="form-label">Gmail</label>
+                                <input type="email" class="form-control" id="supabaseAdminEmail" placeholder="admin@gmail.com" required>
                             </div>
                             <div class="mb-3">
                                 <label style="color: #672222; font-weight:bold;" for="supabaseAdminPassword" class="form-label">Password</label>
@@ -1399,7 +1399,7 @@ if (!magx_is_admin_authenticated()) {
             var email = String($("#supabaseAdminEmail").val() || "").trim();
             var password = String($("#supabaseAdminPassword").val() || "");
             if(!email || !password){
-                $("#supabaseAdminAuthFeedback").addClass("text-danger").removeClass("text-success").text("Email and password are required.");
+                $("#supabaseAdminAuthFeedback").addClass("text-danger").removeClass("text-success").text("Gmail and password are required.");
                 return;
             }
 
@@ -2435,7 +2435,7 @@ if (!magx_is_admin_authenticated()) {
             html += '<div class="record-card">';
             html += '<div class="record-body">';
             html += '<h5 class="record-title">' + esc(item.full_name || 'Unknown Client') + '</h5>';
-            html += '<p class="record-subtitle">' + esc(item.email || '-') + '</p>';
+            html += '<p class="record-subtitle"><strong>Gmail:</strong> ' + esc(item.email || '-') + '</p>';
             html += '<div class="record-meta"><span><i class="fas fa-calendar-alt"></i> ' + esc(item.preferred_date || '-') + '</span><span><i class="fas fa-clock"></i> ' + esc(shortTime) + '</span></div>';
             html += '<div class="record-meta"><span><i class="fas fa-cogs"></i> ' + esc(item.service_type || 'General Inquiry') + '</span><span><i class="fas fa-phone"></i> ' + esc(item.phone || 'N/A') + '</span></div>';
             if (item.notes) {

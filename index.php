@@ -7531,8 +7531,8 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
                                 <div id="bookFullNameError" class="invalid-feedback"></div>
                             </div>
                             <div class="mb-3">
-                                <label for="bookEmail" class="form-label" style="font-weight:700;">Email Address</label>
-                                <input type="email" class="form-control" id="bookEmail" required aria-describedby="bookEmailError">
+                                <label for="bookEmail" class="form-label" style="font-weight:700;">Gmail Address</label>
+                                <input type="email" class="form-control" id="bookEmail" placeholder="you@gmail.com" required aria-describedby="bookEmailError">
                                 <div id="bookEmailError" class="invalid-feedback"></div>
                             </div>
                             <div class="mb-3">
@@ -8300,7 +8300,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 
 	                    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
 	                    if(!values.email || !emailRegex.test(values.email)){
-	                        setFieldError("bookEmail", "A valid email address is required.");
+	                        setFieldError("bookEmail", "A valid Gmail address is required.");
 	                        valid = false;
 	                    }
 

@@ -625,7 +625,7 @@ if (!function_exists('magx_send_appointment_approval_emails')) {
                 $admin->Body =
                     '<p>An appointment was approved.</p>' .
                     '<p><strong>Name:</strong> ' . htmlspecialchars((string)$appointment['full_name'], ENT_QUOTES, 'UTF-8') . '<br>' .
-                    '<strong>Email:</strong> ' . htmlspecialchars((string)$appointment['email'], ENT_QUOTES, 'UTF-8') . '<br>' .
+                    '<strong>Gmail:</strong> ' . htmlspecialchars((string)$appointment['email'], ENT_QUOTES, 'UTF-8') . '<br>' .
                     '<strong>Phone:</strong> ' . htmlspecialchars((string)($appointment['phone'] ?? ''), ENT_QUOTES, 'UTF-8') . '<br>' .
                     '<strong>Date and Time:</strong> ' . htmlspecialchars($when, ENT_QUOTES, 'UTF-8') . '<br>' .
                     '<strong>Service:</strong> ' . htmlspecialchars((string)($appointment['service_type'] ?? ''), ENT_QUOTES, 'UTF-8') . '<br>' .
@@ -636,7 +636,7 @@ if (!function_exists('magx_send_appointment_approval_emails')) {
 
             return ['success' => true];
         } catch (PHPMailerException $e) {
-            return ['success' => false, 'message' => 'Email delivery failed.'];
+            return ['success' => false, 'message' => 'Gmail delivery failed.'];
         }
     }
 }
