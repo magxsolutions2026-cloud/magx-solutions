@@ -729,7 +729,7 @@ if (!function_exists('magx_send_appointment_approval_emails')) {
 
             return ['success' => true];
         } catch (PHPMailerException $e) {
-            return ['success' => false, 'message' => 'Gmail delivery failed.'];
+            return ['success' => false, 'message' => 'Gmail delivery failed: ' . $e->getMessage()];
         }
     }
 }

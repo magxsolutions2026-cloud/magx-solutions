@@ -1392,11 +1392,13 @@ if (!magx_is_admin_authenticated()) {
                 },
                 success: function(res){
                     if(res && res.success){
-                        $("#appointmentDecisionFeedback").removeClass("text-danger").addClass("text-success").text("Appointment approved.");
+                        var serverMsg = (res && res.message) ? String(res.message) : "Appointment approved.";
+                        $("#appointmentDecisionFeedback").removeClass("text-danger").addClass("text-success").text(serverMsg);
+                        alert(serverMsg);
                         setTimeout(function(){
                             $("#appointmentDecisionModal").modal('hide');
                             loadAppointments();
-                        }, 700);
+                        }, 850);
                     } else {
                         $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger")
                             .text((res && res.message) ? String(res.message) : "Approval failed.");
