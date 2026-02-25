@@ -8355,6 +8355,22 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                    return { valid: valid, values: values };
 	                }
 
+	                function applyServerValidationErrors(errors){
+	                    if(!errors || typeof errors !== "object"){ return; }
+	                    const map = {
+	                        full_name: "bookFullName",
+	                        email: "bookEmail",
+	                        phone: "bookPhone",
+	                        preferred_date: "bookDate",
+	                        preferred_time: "bookTime"
+	                    };
+	                    Object.keys(errors).forEach(function(key){
+	                        if(map[key]){
+	                            setFieldError(map[key], String(errors[key] || ""));
+	                        }
+	                    });
+	                }
+
 	                window.openAppointmentBooking = function(){
 	                    resetErrors();
 	                    $form[0].reset();
@@ -8397,27 +8413,19 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                                }, 1200);
 	                                return;
 	                            }
-	                            if(res && res.errors){
-	                                Object.keys(res.errors).forEach(function(key){
-	                                    const map = {
-	                                        full_name: "bookFullName",
-	                                        email: "bookEmail",
-	                                        phone: "bookPhone",
-	                                        preferred_date: "bookDate",
-	                                        preferred_time: "bookTime"
-	                                    };
-	                                    if(map[key]){
-	                                        setFieldError(map[key], String(res.errors[key] || ""));
-	                                    }
-	                                });
-	                            }
+	                            if(res && res.errors){ applyServerValidationErrors(res.errors); }
 	                            setFeedback((res && res.message) ? String(res.message) : "Failed to submit appointment.", true);
 	                            $submit.prop("disabled", false).text("Submit Request");
 	                        },
 	                        error: function(xhr){
 	                            let msg = "Failed to submit appointment.";
-	                            if(xhr && xhr.responseJSON && xhr.responseJSON.message){
-	                                msg = String(xhr.responseJSON.message);
+	                            if(xhr && xhr.responseJSON){
+	                                if(xhr.responseJSON.errors){
+	                                    applyServerValidationErrors(xhr.responseJSON.errors);
+	                                }
+	                                if(xhr.responseJSON.message){
+	                                    msg = String(xhr.responseJSON.message);
+	                                }
 	                            }
 	                            setFeedback(msg, true);
 	                            $submit.prop("disabled", false).text("Submit Request");
