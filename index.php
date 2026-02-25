@@ -8245,9 +8245,28 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                }
 
 	                function loadSlotsForDate(dateValue){
-	                    if(!dateValue){
+	                    function normalizeBookingDateInput(raw){
+	                        var v = String(raw || "").trim();
+	                        if(!v){ return ""; }
+	                        if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ return v; }
+	                        if(/^\d{2}\/\d{2}\/\d{4}$/.test(v)){
+	                            var p = v.split("/");
+	                            return p[2] + "-" + p[0] + "-" + p[1];
+	                        }
+	                        if(/^\d{2}-\d{2}-\d{4}$/.test(v)){
+	                            var d = v.split("-");
+	                            return d[2] + "-" + d[0] + "-" + d[1];
+	                        }
+	                        return v;
+	                    }
+
+	                    var normalizedDate = normalizeBookingDateInput(dateValue);
+	                    if(!normalizedDate){
 	                        $time.html('<option value=\"\">Select a time slot</option>');
 	                        return;
+	                    }
+	                    if(normalizedDate !== String($date.val() || "")){
+	                        $date.val(normalizedDate);
 	                    }
 
 	                    $time.prop("disabled", true).html('<option value=\"\">Loading available slots...</option>');
@@ -8255,10 +8274,13 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                        url: bookingApiUrl,
 	                        method: "POST",
 	                        dataType: "json",
-	                        data: { action: "AVAILABLE_SLOTS", date: dateValue },
+	                        data: { action: "AVAILABLE_SLOTS", date: normalizedDate },
 	                        success: function(res){
 	                            if(!res || !res.success || !Array.isArray(res.slots)){
 	                                $time.html('<option value=\"\">No slots available</option>').prop("disabled", true);
+	                                if(res && res.message){
+	                                    setFeedback(String(res.message), true);
+	                                }
 	                                return;
 	                            }
 	                            let html = '<option value=\"\">Select a time slot</option>';
@@ -8276,17 +8298,33 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                        },
 	                        error: function(){
 	                            $time.html('<option value=\"\">Failed to load slots</option>').prop("disabled", true);
+	                            setFeedback("Could not load available time slots for the selected date.", true);
 	                        }
 	                    });
 	                }
 
 	                function validateForm(){
 	                    resetErrors();
+	                    function normalizeBookingDateInput(raw){
+	                        var v = String(raw || "").trim();
+	                        if(!v){ return ""; }
+	                        if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ return v; }
+	                        if(/^\d{2}\/\d{2}\/\d{4}$/.test(v)){
+	                            var p = v.split("/");
+	                            return p[2] + "-" + p[0] + "-" + p[1];
+	                        }
+	                        if(/^\d{2}-\d{2}-\d{4}$/.test(v)){
+	                            var d = v.split("-");
+	                            return d[2] + "-" + d[0] + "-" + d[1];
+	                        }
+	                        return v;
+	                    }
+
 	                    const values = {
 	                        full_name: String($("#bookFullName").val() || "").trim(),
 	                        email: String($("#bookEmail").val() || "").trim(),
 	                        phone: String($("#bookPhone").val() || "").trim(),
-	                        preferred_date: String($date.val() || "").trim(),
+	                        preferred_date: normalizeBookingDateInput(String($date.val() || "").trim()),
 	                        preferred_time: String($time.val() || "").trim(),
 	                        service_type: String($("#bookServiceType").val() || "").trim(),
 	                        notes: String($("#bookNotes").val() || "").trim()
@@ -8298,7 +8336,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                        valid = false;
 	                    }
 
-	                    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+	                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 	                    if(!values.email || !emailRegex.test(values.email)){
 	                        setFieldError("bookEmail", "A valid Gmail address is required.");
 	                        valid = false;
