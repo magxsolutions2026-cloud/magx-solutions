@@ -1177,6 +1177,7 @@ if (!magx_is_admin_authenticated()) {
     let homePostsRecords = [];
     let contactsRecords = [];
     let appointmentRecords = [];
+    let approvedAppointmentRecords = [];
     let homePostsSearchTerm = "";
     let contactsSearchTerm = "";
     let appointmentsSearchTerm = "";
@@ -1368,6 +1369,13 @@ if (!magx_is_admin_authenticated()) {
             var id = String($(this).data("id") || "").trim();
             if(id){
                 rejectAppointment(id);
+            }
+        });
+
+        $(document).on("click", ".appointment-cancel-approved-btn", function(){
+            var id = String($(this).data("id") || "").trim();
+            if(id){
+                cancelApprovedAppointment(id);
             }
         });
 
@@ -2257,28 +2265,39 @@ if (!magx_is_admin_authenticated()) {
     }
 
     function loadAppointments() {
-        $.ajax({
+        var pendingReq = $.ajax({
             url: "appointments_admin_api.php",
             method: "POST",
             dataType: "json",
-            data: {
-                action: "LOAD_PENDING"
-            },
-            success: function(response) {
-                if (response && response.success) {
-                    displayAppointments(response.data || []);
-                    return;
-                }
-                alert("Error loading appointments: " + ((response && response.message) ? response.message : "Request failed"));
-            },
-            error: function() {
-                alert("Error loading appointments!");
+            data: { action: "LOAD_PENDING" }
+        });
+        var approvedReq = $.ajax({
+            url: "appointments_admin_api.php",
+            method: "POST",
+            dataType: "json",
+            data: { action: "LOAD_APPROVED" }
+        });
+
+        $.when(pendingReq, approvedReq).done(function(pendingRes, approvedRes){
+            var p = pendingRes && pendingRes[0] ? pendingRes[0] : null;
+            var a = approvedRes && approvedRes[0] ? approvedRes[0] : null;
+            if (!p || !p.success) {
+                alert("Error loading pending appointments: " + ((p && p.message) ? p.message : "Request failed"));
+                return;
             }
+            if (!a || !a.success) {
+                alert("Error loading approved schedule: " + ((a && a.message) ? a.message : "Request failed"));
+                return;
+            }
+            displayAppointments(p.data || [], a.data || []);
+        }).fail(function(){
+            alert("Error loading appointments!");
         });
     }
 
-    function displayAppointments(records) {
+    function displayAppointments(records, approvedRecords) {
         appointmentRecords = Array.isArray(records) ? records : [];
+        approvedAppointmentRecords = Array.isArray(approvedRecords) ? approvedRecords : [];
         renderAppointments();
     }
 
@@ -2297,10 +2316,26 @@ if (!magx_is_admin_authenticated()) {
         });
     }
 
+    function getFilteredApprovedAppointments() {
+        if (!appointmentsSearchTerm) {
+            return approvedAppointmentRecords;
+        }
+
+        var query = normalizeText(appointmentsSearchTerm);
+        return approvedAppointmentRecords.filter(function(item) {
+            return normalizeText(item.full_name).indexOf(query) > -1 ||
+                normalizeText(item.email).indexOf(query) > -1 ||
+                normalizeText(item.preferred_date).indexOf(query) > -1 ||
+                normalizeText(item.preferred_time).indexOf(query) > -1 ||
+                normalizeText(item.service_type).indexOf(query) > -1;
+        });
+    }
+
     function renderAppointments() {
         var records = getFilteredAppointments();
+        var approvedRecords = getFilteredApprovedAppointments();
         var gridClass = 'records-grid' + (appointmentsViewMode === 'list' ? ' list-mode' : '');
-        var html = '<div class="' + gridClass + '">';
+        var html = '';
         function esc(value) {
             return String(value || '')
                 .replace(/&/g, '&amp;')
@@ -2310,36 +2345,68 @@ if (!magx_is_admin_authenticated()) {
                 .replace(/'/g, '&#39;');
         }
 
+        html += '<div style="margin-bottom:10px; color:#eaf6ff; font-weight:800; letter-spacing:0.06em; text-transform:uppercase;">Pending Approvals</div>';
+        html += '<div class="' + gridClass + '">';
         if (records.length === 0) {
             html += '<div class="empty-records">' + (appointmentsSearchTerm ? 'No appointments found for your search.' : 'No pending appointments found.') + '</div>';
             html += '</div>';
-            $("#appointments_table").html(html);
-            return;
+        } else {
+            records.forEach(function(item) {
+                var preferredTime = String(item.preferred_time || "");
+                var shortTime = preferredTime.length >= 5 ? preferredTime.substring(0, 5) : preferredTime;
+                html += '<div class="record-card">';
+                html += '<div class="record-body">';
+                html += '<h5 class="record-title">' + esc(item.full_name || 'Unknown Client') + '</h5>';
+                html += '<p class="record-subtitle"><strong>Gmail:</strong> ' + esc(item.email || '-') + '</p>';
+                html += '<div class="record-meta"><span><i class="fas fa-calendar-alt"></i> ' + esc(item.preferred_date || '-') + '</span><span><i class="fas fa-clock"></i> ' + esc(shortTime) + '</span></div>';
+                html += '<div class="record-meta"><span><i class="fas fa-cogs"></i> ' + esc(item.service_type || 'General Inquiry') + '</span><span><i class="fas fa-phone"></i> ' + esc(item.phone || 'N/A') + '</span></div>';
+                if (item.notes) {
+                    html += '<p class="record-subtitle" style="margin-bottom:10px;"><strong>Notes:</strong> ' + esc(item.notes) + '</p>';
+                }
+                html += '<div class="record-actions">';
+                html += '<span class="record-chip" style="position:static;">Pending</span>';
+                html += '<div>';
+                html += '<button class="btn btn-sm me-2 appointment-approve-btn" style="background-color:#0f3a76; color:white;" data-id="' + esc(item.id) + '"><i class="fas fa-check"></i> Approve</button>';
+                html += '<button class="btn btn-sm btn-danger appointment-reject-btn" data-id="' + esc(item.id) + '"><i class="fas fa-times"></i> Reject</button>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
         }
+        html += '</div>';
 
-        records.forEach(function(item) {
-            var preferredTime = String(item.preferred_time || "");
-            var shortTime = preferredTime.length >= 5 ? preferredTime.substring(0, 5) : preferredTime;
-            html += '<div class="record-card">';
-            html += '<div class="record-body">';
-            html += '<h5 class="record-title">' + esc(item.full_name || 'Unknown Client') + '</h5>';
-            html += '<p class="record-subtitle"><strong>Gmail:</strong> ' + esc(item.email || '-') + '</p>';
-            html += '<div class="record-meta"><span><i class="fas fa-calendar-alt"></i> ' + esc(item.preferred_date || '-') + '</span><span><i class="fas fa-clock"></i> ' + esc(shortTime) + '</span></div>';
-            html += '<div class="record-meta"><span><i class="fas fa-cogs"></i> ' + esc(item.service_type || 'General Inquiry') + '</span><span><i class="fas fa-phone"></i> ' + esc(item.phone || 'N/A') + '</span></div>';
-            if (item.notes) {
-                html += '<p class="record-subtitle" style="margin-bottom:10px;"><strong>Notes:</strong> ' + esc(item.notes) + '</p>';
-            }
-            html += '<div class="record-actions">';
-            html += '<span class="record-chip" style="position:static;">Pending</span>';
-            html += '<div>';
-            html += '<button class="btn btn-sm me-2 appointment-approve-btn" style="background-color:#0f3a76; color:white;" data-id="' + esc(item.id) + '"><i class="fas fa-check"></i> Approve</button>';
-            html += '<button class="btn btn-sm btn-danger appointment-reject-btn" data-id="' + esc(item.id) + '"><i class="fas fa-times"></i> Reject</button>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-        });
-
+        html += '<div style="margin:16px 0 10px; color:#eaf6ff; font-weight:800; letter-spacing:0.06em; text-transform:uppercase;">Approved Schedule</div>';
+        html += '<div class="' + gridClass + '">';
+        if (approvedRecords.length === 0) {
+            html += '<div class="empty-records">' + (appointmentsSearchTerm ? 'No approved schedule found for your search.' : 'No approved appointments yet.') + '</div>';
+        } else {
+            approvedRecords.forEach(function(item){
+                var preferredTime = String(item.preferred_time || "");
+                var shortTime = preferredTime.length >= 5 ? preferredTime.substring(0, 5) : preferredTime;
+                var zoom = String(item.zoom_link || "").trim();
+                html += '<div class="record-card">';
+                html += '<div class="record-body">';
+                html += '<h5 class="record-title">' + esc(item.full_name || 'Unknown Client') + '</h5>';
+                html += '<p class="record-subtitle"><strong>Gmail:</strong> ' + esc(item.email || '-') + '</p>';
+                html += '<div class="record-meta"><span><i class="fas fa-calendar-alt"></i> ' + esc(item.preferred_date || '-') + '</span><span><i class="fas fa-clock"></i> ' + esc(shortTime) + '</span></div>';
+                html += '<div class="record-meta"><span><i class="fas fa-cogs"></i> ' + esc(item.service_type || 'General Inquiry') + '</span><span><i class="fas fa-phone"></i> ' + esc(item.phone || 'N/A') + '</span></div>';
+                html += '<p class="record-subtitle" style="margin-bottom:10px;"><strong>Zoom:</strong> ' + (zoom ? ('<a href="' + esc(zoom) + '" target="_blank" rel="noopener" style="color:#9fd0ff;">Join meeting</a>') : 'Not set') + '</p>';
+                html += '<div class="record-actions">';
+                html += '<span class="record-chip" style="position:static;">Approved</span>';
+                html += '<div>';
+                if (zoom) {
+                    html += '<a class="btn btn-sm me-2" style="background-color:#0f3a76; color:white;" href="' + esc(zoom) + '" target="_blank" rel="noopener"><i class="fas fa-video"></i> Open Zoom</a>';
+                } else {
+                    html += '<button class="btn btn-sm me-2" style="background-color:#495b72; color:white;" disabled><i class="fas fa-video"></i> No Zoom Link</button>';
+                }
+                html += '<button class="btn btn-sm btn-danger appointment-cancel-approved-btn" data-id="' + esc(item.id) + '"><i class="fas fa-ban"></i> Cancel Schedule</button>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+        }
         html += '</div>';
         $("#appointments_table").html(html);
     }
@@ -2373,6 +2440,36 @@ if (!magx_is_admin_authenticated()) {
             },
             error: function(xhr) {
                 var msg = "Rejection failed.";
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alert(msg);
+            }
+        });
+    };
+
+    window.cancelApprovedAppointment = function(id) {
+        if (!confirm("Cancel this approved appointment schedule?")) {
+            return;
+        }
+        $.ajax({
+            url: "appointments_admin_api.php",
+            method: "POST",
+            dataType: "json",
+            data: {
+                action: "CANCEL_APPROVED",
+                id: id
+            },
+            success: function(res) {
+                if (res && res.success) {
+                    alert((res && res.message) ? res.message : "Approved appointment cancelled.");
+                    loadAppointments();
+                } else {
+                    alert("Error: " + ((res && res.message) ? res.message : "Request failed"));
+                }
+            },
+            error: function(xhr) {
+                var msg = "Cancel failed.";
                 if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
                 }

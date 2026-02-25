@@ -50,6 +50,40 @@ if ($action === 'LOAD_APPROVED') {
     magx_json_response(['success' => true, 'data' => $rows ?: []]);
 }
 
+if ($action === 'CANCEL_APPROVED') {
+    $id = trim((string)($_POST['id'] ?? ''));
+    if ($id === '' || strlen($id) > 80) {
+        magx_json_response(['success' => false, 'message' => 'Invalid appointment id.'], 422);
+    }
+
+    $row = magx_db_execute(
+        $db,
+        "SELECT status FROM appointments WHERE id = :id LIMIT 1",
+        [':id' => $id]
+    )->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row) {
+        magx_json_response(['success' => false, 'message' => 'Appointment not found.'], 404);
+    }
+
+    if ((string)$row['status'] !== 'approved') {
+        if ((string)$row['status'] === 'rejected') {
+            magx_json_response(['success' => true, 'message' => 'Appointment is already cancelled.']);
+        }
+        magx_json_response(['success' => true, 'message' => 'Appointment is not in approved status.']);
+    }
+
+    magx_db_execute(
+        $db,
+        "UPDATE appointments
+         SET status = 'rejected'
+         WHERE id = :id AND status = 'approved'",
+        [':id' => $id]
+    );
+
+    magx_json_response(['success' => true, 'message' => 'Approved appointment schedule cancelled.']);
+}
+
 if ($action === 'DECIDE') {
     $id = trim((string)($_POST['id'] ?? ''));
     $decision = strtoupper(trim((string)($_POST['decision'] ?? '')));
