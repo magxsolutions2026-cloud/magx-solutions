@@ -158,6 +158,18 @@ if ($action === 'DECIDE') {
         [':z' => $zoomLink, ':id' => $id]
     );
     if ($updated->rowCount() < 1) {
+        $latest = magx_db_execute(
+            $db,
+            "SELECT status FROM appointments WHERE id = :id LIMIT 1",
+            [':id' => $id]
+        )->fetch(PDO::FETCH_ASSOC);
+
+        if ($latest && (string)($latest['status'] ?? '') === 'approved') {
+            magx_json_response(['success' => true, 'message' => 'Appointment already approved.']);
+        }
+        if ($latest && (string)($latest['status'] ?? '') === 'rejected') {
+            magx_json_response(['success' => true, 'message' => 'Appointment is already rejected.']);
+        }
         magx_json_response(['success' => false, 'message' => 'Appointment is no longer pending.'], 409);
     }
 

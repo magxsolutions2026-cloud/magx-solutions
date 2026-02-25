@@ -1497,6 +1497,10 @@ if (!magx_is_admin_authenticated()) {
             if(!appointmentId){
                 return;
             }
+            function isBenignApprovalStatus(message) {
+                var m = String(message || "").toLowerCase();
+                return m.indexOf("already approved") !== -1 || m.indexOf("no longer pending") !== -1;
+            }
             var $btn = $("#appointmentApproveBtn");
             $btn.prop("disabled", true).text("Approving...");
             $("#appointmentDecisionFeedback").removeClass("text-danger text-success").text("");
@@ -1520,8 +1524,17 @@ if (!magx_is_admin_authenticated()) {
                             loadAppointments();
                         }, 850);
                     } else {
-                        $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger")
-                            .text((res && res.message) ? String(res.message) : "Approval failed.");
+                        var nonSuccessMsg = (res && res.message) ? String(res.message) : "Approval failed.";
+                        if (isBenignApprovalStatus(nonSuccessMsg)) {
+                            $("#appointmentDecisionFeedback").removeClass("text-danger").addClass("text-success").text(nonSuccessMsg);
+                            magxNotify(nonSuccessMsg, "Appointment Update");
+                            setTimeout(function(){
+                                $("#appointmentDecisionModal").modal('hide');
+                                loadAppointments();
+                            }, 500);
+                        } else {
+                            $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger").text(nonSuccessMsg);
+                        }
                     }
                     $btn.prop("disabled", false).text("Approve");
                 },
@@ -1537,7 +1550,16 @@ if (!magx_is_admin_authenticated()) {
                             }
                         } catch (e) {}
                     }
-                    $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger").text(msg);
+                    if (isBenignApprovalStatus(msg)) {
+                        $("#appointmentDecisionFeedback").removeClass("text-danger").addClass("text-success").text(msg);
+                        magxNotify(msg, "Appointment Update");
+                        setTimeout(function(){
+                            $("#appointmentDecisionModal").modal('hide');
+                            loadAppointments();
+                        }, 500);
+                    } else {
+                        $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger").text(msg);
+                    }
                     $btn.prop("disabled", false).text("Approve");
                 }
             });
