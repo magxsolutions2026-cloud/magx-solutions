@@ -14,6 +14,8 @@
     { "src": "^/contact_api\\.php$", "dest": "/api/contact_api.php" },
     { "src": "^/footer_contact_api\\.php$", "dest": "/api/footer_contact_api.php" },
     { "src": "^/portfolio_api\\.php$", "dest": "/api/portfolio_api.php" },
+    { "src": "^/appointments_api\\.php$", "dest": "/api/appointments_api.php" },
+    { "src": "^/appointments_admin_api\\.php$", "dest": "/api/appointments_admin_api.php" },
     { "src": "^/(?!api/).+\\.php$", "status": 404 },
     { "handle": "filesystem" },
     { "src": "^/(.*)$", "dest": "/api/index.php" }

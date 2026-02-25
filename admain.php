@@ -618,7 +618,7 @@ if (!magx_is_admin_authenticated()) {
                     background: rgba(255,255,255,0.12);
                     color:#fff;
                 }
-                #data_table, #home_posts, #contacts_section{
+                #data_table, #home_posts, #contacts_section, #appointments_section{
                     background: transparent;
                 }
                 .logs-container{
@@ -695,6 +695,7 @@ if (!magx_is_admin_authenticated()) {
         </br>
             <a href="#" id="homeposts">Home Highlights</a>
             <a href="#" id="contacts">Contacts</a>
+            <a href="#" id="appointmentsNav">Appointments</a>
             <div class="dropdown" style="display:inline-block; width:100%;">
                 <a href="#" class="dropdown-toggle" id="adminchangepass" data-bs-toggle="dropdown" aria-expanded="false">
                     My Account
@@ -765,6 +766,33 @@ if (!magx_is_admin_authenticated()) {
                 </div>
                 <div id="contacts_table" style="overflow-x: auto; overflow-y: visible; min-height: 200px;">
                     <!-- Contacts will display here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments Section -->
+        <div id="appointments_section" style="display: none;">
+            <div style="margin: 20px 50px;">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h3 style="color: #672222;">Appointment Approvals</h3>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-light" id="appointmentsConnectBtn">
+                            <i class="fas fa-user-shield"></i> Connect Supabase Admin
+                        </button>
+                        <button type="button" class="btn" style="background: #672222; color: white;" id="appointmentsRefreshBtn">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="appointmentsAuthStatus" class="small text-light mb-2">Supabase admin token not connected.</div>
+                <div class="record-toolbar">
+                    <input type="text" class="form-control record-search-input" id="appointmentsSearchInput" placeholder="Search by client, email, date, time, or service...">
+                    <button type="button" class="btn btn-outline-light record-view-toggle" id="appointmentsViewToggle">
+                        <i class="fas fa-list"></i> List View
+                    </button>
+                </div>
+                <div id="appointments_table" style="overflow-y: auto;">
+                    <!-- Appointment cards render here -->
                 </div>
             </div>
         </div>
@@ -1045,6 +1073,60 @@ if (!magx_is_admin_authenticated()) {
             </div>
         </div>
 
+        <div class="modal fade" id="supabaseAdminModal" tabindex="-1" aria-labelledby="supabaseAdminModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(90deg, #672222, #8c2f2f); color: white;">
+                        <h5 class="modal-title" id="supabaseAdminModalLabel">Supabase Admin Authentication</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="supabaseAdminForm">
+                            <div class="mb-3">
+                                <label style="color: #672222; font-weight:bold;" for="supabaseAdminEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="supabaseAdminEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label style="color: #672222; font-weight:bold;" for="supabaseAdminPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="supabaseAdminPassword" required>
+                            </div>
+                            <div id="supabaseAdminAuthFeedback" class="small"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn" style="background: #672222; color: white;" id="supabaseAdminLoginBtn">Authenticate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="appointmentDecisionModal" tabindex="-1" aria-labelledby="appointmentDecisionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(90deg, #672222, #8c2f2f); color: white;">
+                        <h5 class="modal-title" id="appointmentDecisionModalLabel">Approve Appointment</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="appointmentDecisionForm">
+                            <input type="hidden" id="decisionAppointmentId" value="">
+                            <div class="mb-3">
+                                <label style="color: #672222; font-weight:bold;" for="decisionZoomLink" class="form-label">Zoom Meeting Link</label>
+                                <input type="url" class="form-control" id="decisionZoomLink" placeholder="https://zoom.us/j/...">
+                                <small class="text-muted">Optional: leave blank to auto-generate.</small>
+                            </div>
+                            <div id="appointmentDecisionFeedback" class="small"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn" style="background: #672222; color: white;" id="appointmentApproveBtn">Approve</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer Contact Modal -->
         <div class="modal fade" id="footerContactModal" tabindex="-1" aria-labelledby="footerContactModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
@@ -1128,10 +1210,14 @@ if (!magx_is_admin_authenticated()) {
     const MAGX_SUPABASE_READY = !!(MAGX_SUPABASE_URL && MAGX_SUPABASE_ANON_KEY && MAGX_HOME_POSTS_BUCKET);
     let homePostsRecords = [];
     let contactsRecords = [];
+    let appointmentRecords = [];
     let homePostsSearchTerm = "";
     let contactsSearchTerm = "";
+    let appointmentsSearchTerm = "";
     let homePostsViewMode = "card";
     let contactsViewMode = "card";
+    let appointmentsViewMode = "card";
+    let appointmentsAdminToken = "";
 
     function normalizeText(value) {
         return String(value || "").toLowerCase();
@@ -1140,7 +1226,9 @@ if (!magx_is_admin_authenticated()) {
     $(document).ready(function(){
         $("#home_posts").show();
         $("#contacts_section").hide();
+        $("#appointments_section").hide();
         loadHomePosts();
+        updateAppointmentsAuthUi();
          // side nav
         $("#sidenav").click(function(){
             $("#mySidenav").css("width", "250px");
@@ -1158,6 +1246,7 @@ if (!magx_is_admin_authenticated()) {
             $("#contacts_section").hide();
             $("#services_section").hide();
             $("#portfolio_section").hide();
+            $("#appointments_section").hide();
             $("#home_posts").show();
             loadHomePosts();
         });
@@ -1167,8 +1256,18 @@ if (!magx_is_admin_authenticated()) {
             $("#home_posts").hide();
             $("#services_section").hide();
             $("#portfolio_section").hide();
+            $("#appointments_section").hide();
             $("#contacts_section").show();
             loadContacts();
+        });
+
+        $("#appointmentsNav").click(function(){
+            $("#home_posts").hide();
+            $("#services_section").hide();
+            $("#portfolio_section").hide();
+            $("#contacts_section").hide();
+            $("#appointments_section").show();
+            loadAppointments();
         });
 
         $("#homePostsSearchInput").on("input", function(){
@@ -1179,6 +1278,11 @@ if (!magx_is_admin_authenticated()) {
         $("#contactsSearchInput").on("input", function(){
             contactsSearchTerm = String($(this).val() || "");
             renderContacts();
+        });
+
+        $("#appointmentsSearchInput").on("input", function(){
+            appointmentsSearchTerm = String($(this).val() || "");
+            renderAppointments();
         });
 
         $("#homePostsViewToggle").on("click", function(){
@@ -1195,6 +1299,14 @@ if (!magx_is_admin_authenticated()) {
                 ? '<i class="fas fa-list"></i> List View'
                 : '<i class="fas fa-th-large"></i> Card View');
             renderContacts();
+        });
+
+        $("#appointmentsViewToggle").on("click", function(){
+            appointmentsViewMode = (appointmentsViewMode === "card") ? "list" : "card";
+            $(this).html(appointmentsViewMode === "card"
+                ? '<i class="fas fa-list"></i> List View'
+                : '<i class="fas fa-th-large"></i> Card View');
+            renderAppointments();
         });
 
         // end side nav
@@ -1273,6 +1385,119 @@ if (!magx_is_admin_authenticated()) {
                 },
                 error: function() {
                     alert("Error adding admin account!");
+                }
+            });
+        });
+
+        $("#appointmentsConnectBtn").click(function(){
+            $("#supabaseAdminAuthFeedback").removeClass("text-danger text-success").text("");
+            $("#supabaseAdminForm")[0].reset();
+            $("#supabaseAdminModal").modal('show');
+        });
+
+        $("#supabaseAdminLoginBtn").click(function(){
+            var email = String($("#supabaseAdminEmail").val() || "").trim();
+            var password = String($("#supabaseAdminPassword").val() || "");
+            if(!email || !password){
+                $("#supabaseAdminAuthFeedback").addClass("text-danger").removeClass("text-success").text("Email and password are required.");
+                return;
+            }
+
+            var $btn = $("#supabaseAdminLoginBtn");
+            $btn.prop("disabled", true).text("Authenticating...");
+            $.ajax({
+                url: "appointments_admin_api.php",
+                method: "POST",
+                dataType: "json",
+                data: {
+                    action: "SUPABASE_LOGIN",
+                    email: email,
+                    password: password
+                },
+                success: function(res){
+                    if(res && res.success && res.token){
+                        appointmentsAdminToken = String(res.token);
+                        updateAppointmentsAuthUi();
+                        $("#supabaseAdminAuthFeedback").removeClass("text-danger").addClass("text-success").text("Authenticated.");
+                        setTimeout(function(){
+                            $("#supabaseAdminModal").modal('hide');
+                            loadAppointments();
+                        }, 500);
+                    } else {
+                        $("#supabaseAdminAuthFeedback").removeClass("text-success").addClass("text-danger")
+                            .text((res && res.message) ? String(res.message) : "Authentication failed.");
+                    }
+                    $btn.prop("disabled", false).text("Authenticate");
+                },
+                error: function(xhr){
+                    var msg = "Authentication failed.";
+                    if(xhr && xhr.responseJSON && xhr.responseJSON.message){
+                        msg = String(xhr.responseJSON.message);
+                    }
+                    $("#supabaseAdminAuthFeedback").removeClass("text-success").addClass("text-danger").text(msg);
+                    $btn.prop("disabled", false).text("Authenticate");
+                }
+            });
+        });
+
+        $("#appointmentsRefreshBtn").click(function(){
+            loadAppointments();
+        });
+
+        $(document).on("click", ".appointment-approve-btn", function(){
+            var id = String($(this).data("id") || "").trim();
+            if(id){
+                openApproveAppointmentModal(id);
+            }
+        });
+
+        $(document).on("click", ".appointment-reject-btn", function(){
+            var id = String($(this).data("id") || "").trim();
+            if(id){
+                rejectAppointment(id);
+            }
+        });
+
+        $("#appointmentApproveBtn").click(function(){
+            var appointmentId = String($("#decisionAppointmentId").val() || "").trim();
+            var zoomLink = String($("#decisionZoomLink").val() || "").trim();
+            if(!appointmentId){
+                return;
+            }
+            var $btn = $("#appointmentApproveBtn");
+            $btn.prop("disabled", true).text("Approving...");
+            $("#appointmentDecisionFeedback").removeClass("text-danger text-success").text("");
+            $.ajax({
+                url: "appointments_admin_api.php",
+                method: "POST",
+                dataType: "json",
+                data: {
+                    action: "DECIDE",
+                    id: appointmentId,
+                    decision: "APPROVE",
+                    zoom_link: zoomLink,
+                    supabase_token: appointmentsAdminToken
+                },
+                success: function(res){
+                    if(res && res.success){
+                        $("#appointmentDecisionFeedback").removeClass("text-danger").addClass("text-success").text("Appointment approved.");
+                        setTimeout(function(){
+                            $("#appointmentDecisionModal").modal('hide');
+                            loadAppointments();
+                        }, 700);
+                    } else {
+                        $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger")
+                            .text((res && res.message) ? String(res.message) : "Approval failed.");
+                    }
+                    $btn.prop("disabled", false).text("Approve");
+                },
+                error: function(xhr){
+                    var msg = "Approval failed.";
+                    if(xhr && xhr.responseJSON && xhr.responseJSON.message){
+                        msg = String(xhr.responseJSON.message);
+                    }
+                    $("#appointmentDecisionFeedback").removeClass("text-success").addClass("text-danger").text(msg);
+                    $btn.prop("disabled", false).text("Approve");
                 }
             });
         });
@@ -2109,6 +2334,169 @@ if (!magx_is_admin_authenticated()) {
             }
         });
     }
+
+    function updateAppointmentsAuthUi() {
+        if (appointmentsAdminToken) {
+            $("#appointmentsAuthStatus").removeClass("text-warning").addClass("text-success").text("Supabase admin authenticated.");
+            $("#appointmentsConnectBtn").html('<i class="fas fa-check-circle"></i> Supabase Connected');
+        } else {
+            $("#appointmentsAuthStatus").removeClass("text-success").addClass("text-warning").text("Supabase admin token not connected.");
+            $("#appointmentsConnectBtn").html('<i class="fas fa-user-shield"></i> Connect Supabase Admin');
+        }
+    }
+
+    function loadAppointments() {
+        if (!appointmentsAdminToken) {
+            appointmentRecords = [];
+            renderAppointments();
+            updateAppointmentsAuthUi();
+            return;
+        }
+
+        $.ajax({
+            url: "appointments_admin_api.php",
+            method: "POST",
+            dataType: "json",
+            data: {
+                action: "LOAD_PENDING",
+                supabase_token: appointmentsAdminToken
+            },
+            success: function(response) {
+                if (response && response.success) {
+                    displayAppointments(response.data || []);
+                    return;
+                }
+                if (response && response.message && String(response.message).toLowerCase().indexOf("authorization") > -1) {
+                    appointmentsAdminToken = "";
+                    updateAppointmentsAuthUi();
+                }
+                alert("Error loading appointments: " + ((response && response.message) ? response.message : "Request failed"));
+            },
+            error: function(xhr) {
+                if (xhr && xhr.status === 403) {
+                    appointmentsAdminToken = "";
+                    updateAppointmentsAuthUi();
+                }
+                alert("Error loading appointments!");
+            }
+        });
+    }
+
+    function displayAppointments(records) {
+        appointmentRecords = Array.isArray(records) ? records : [];
+        renderAppointments();
+    }
+
+    function getFilteredAppointments() {
+        if (!appointmentsSearchTerm) {
+            return appointmentRecords;
+        }
+
+        var query = normalizeText(appointmentsSearchTerm);
+        return appointmentRecords.filter(function(item) {
+            return normalizeText(item.full_name).indexOf(query) > -1 ||
+                normalizeText(item.email).indexOf(query) > -1 ||
+                normalizeText(item.preferred_date).indexOf(query) > -1 ||
+                normalizeText(item.preferred_time).indexOf(query) > -1 ||
+                normalizeText(item.service_type).indexOf(query) > -1;
+        });
+    }
+
+    function renderAppointments() {
+        var records = getFilteredAppointments();
+        var gridClass = 'records-grid' + (appointmentsViewMode === 'list' ? ' list-mode' : '');
+        var html = '<div class="' + gridClass + '">';
+        function esc(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        if (!appointmentsAdminToken) {
+            html += '<div class="empty-records">Connect a Supabase admin account to manage appointment approvals.</div>';
+            html += '</div>';
+            $("#appointments_table").html(html);
+            return;
+        }
+
+        if (records.length === 0) {
+            html += '<div class="empty-records">' + (appointmentsSearchTerm ? 'No appointments found for your search.' : 'No pending appointments found.') + '</div>';
+            html += '</div>';
+            $("#appointments_table").html(html);
+            return;
+        }
+
+        records.forEach(function(item) {
+            var preferredTime = String(item.preferred_time || "");
+            var shortTime = preferredTime.length >= 5 ? preferredTime.substring(0, 5) : preferredTime;
+            html += '<div class="record-card">';
+            html += '<div class="record-body">';
+            html += '<h5 class="record-title">' + esc(item.full_name || 'Unknown Client') + '</h5>';
+            html += '<p class="record-subtitle">' + esc(item.email || '-') + '</p>';
+            html += '<div class="record-meta"><span><i class="fas fa-calendar-alt"></i> ' + esc(item.preferred_date || '-') + '</span><span><i class="fas fa-clock"></i> ' + esc(shortTime) + '</span></div>';
+            html += '<div class="record-meta"><span><i class="fas fa-cogs"></i> ' + esc(item.service_type || 'General Inquiry') + '</span><span><i class="fas fa-phone"></i> ' + esc(item.phone || 'N/A') + '</span></div>';
+            if (item.notes) {
+                html += '<p class="record-subtitle" style="margin-bottom:10px;"><strong>Notes:</strong> ' + esc(item.notes) + '</p>';
+            }
+            html += '<div class="record-actions">';
+            html += '<span class="record-chip" style="position:static;">Pending</span>';
+            html += '<div>';
+            html += '<button class="btn btn-sm me-2 appointment-approve-btn" style="background-color:#0f3a76; color:white;" data-id="' + esc(item.id) + '"><i class="fas fa-check"></i> Approve</button>';
+            html += '<button class="btn btn-sm btn-danger appointment-reject-btn" data-id="' + esc(item.id) + '"><i class="fas fa-times"></i> Reject</button>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+        });
+
+        html += '</div>';
+        $("#appointments_table").html(html);
+    }
+
+    window.openApproveAppointmentModal = function(id) {
+        $("#decisionAppointmentId").val(id);
+        $("#decisionZoomLink").val("");
+        $("#appointmentDecisionFeedback").removeClass("text-danger text-success").text("");
+        $("#appointmentDecisionModal").modal('show');
+    };
+
+    window.rejectAppointment = function(id) {
+        if (!appointmentsAdminToken) {
+            alert("Connect Supabase admin first.");
+            return;
+        }
+        if (!confirm("Reject this appointment request?")) {
+            return;
+        }
+        $.ajax({
+            url: "appointments_admin_api.php",
+            method: "POST",
+            dataType: "json",
+            data: {
+                action: "DECIDE",
+                id: id,
+                decision: "REJECT",
+                supabase_token: appointmentsAdminToken
+            },
+            success: function(res) {
+                if (res && res.success) {
+                    loadAppointments();
+                } else {
+                    alert("Error: " + ((res && res.message) ? res.message : "Request failed"));
+                }
+            },
+            error: function(xhr) {
+                var msg = "Rejection failed.";
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alert(msg);
+            }
+        });
+    };
 
     // Load footer contact
     function loadFooterContact() {

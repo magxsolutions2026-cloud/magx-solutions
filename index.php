@@ -6964,7 +6964,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 		                                <p class="hero-kicker">EST 2026</p>
 		                                <p class="hero-tagline">Magx build secure web systems and workflow automations that replace manual work with fast, trackable processes.</p>
 		                                <div class="hero-cta">
-		                                    <button id="heroConsult" type="button" class="btn btn-primary">Free Consultation</button>
+		                                    <button id="heroConsult" type="button" class="btn btn-primary">BOOK APPOINTMENT</button>
 		                                    <button id="heroPortfolio" type="button" class="btn btn-outline-light">View Portfolio</button>
 		                                    <button id="heroExplore" type="button" class="btn btn-outline-light">Explore Services</button>
 		                                </div>
@@ -7043,7 +7043,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
                         <h2>SYSTEMS THAT WORK FOR YOUR TEAM</h2>
                         <p>MAGX Solution’s service stack turns manual workflows, spreadsheets, and paperwork into automated, data-rich applications. We design secure web portals, dashboard-driven operations, integrations, and database-backed tools that keep every stakeholder aligned.</p>
                         <div class="services-hero-actions">
-                            <button type="button" class="service-cta primary">Book a discovery call</button>
+                            <button type="button" class="service-cta primary" id="servicesBookAppointment">Book a discovery call</button>
                             <button type="button" class="service-cta ghost">Share your process challenge</button>
                         </div>
                     </section>
@@ -7504,6 +7504,69 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
                             <i class="fas fa-map-marker-alt me-2" style="color: #672222;"></i>
                             Ilagan City, Isabela
                         </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointment Booking Modal -->
+        <div class="modal fade modern-sheet" id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title fs-5" id="appointmentModalLabel">
+                            <div class="title-main">
+                                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                                <span>Book Appointment</span>
+                            </div>
+                            <div class="title-sub">Requests require admin approval</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="appointmentForm" novalidate>
+                            <div class="mb-3">
+                                <label for="bookFullName" class="form-label" style="font-weight:700;">Full Name</label>
+                                <input type="text" class="form-control" id="bookFullName" required aria-describedby="bookFullNameError">
+                                <div id="bookFullNameError" class="invalid-feedback"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bookEmail" class="form-label" style="font-weight:700;">Email Address</label>
+                                <input type="email" class="form-control" id="bookEmail" required aria-describedby="bookEmailError">
+                                <div id="bookEmailError" class="invalid-feedback"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bookPhone" class="form-label" style="font-weight:700;">Phone Number</label>
+                                <input type="text" class="form-control" id="bookPhone" aria-describedby="bookPhoneError">
+                                <div id="bookPhoneError" class="invalid-feedback"></div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="bookDate" class="form-label" style="font-weight:700;">Preferred Date</label>
+                                    <input type="date" class="form-control" id="bookDate" required aria-describedby="bookDateError">
+                                    <div id="bookDateError" class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bookTime" class="form-label" style="font-weight:700;">Preferred Time Slot</label>
+                                    <select class="form-select" id="bookTime" required aria-describedby="bookTimeError">
+                                        <option value="">Select a time slot</option>
+                                    </select>
+                                    <div id="bookTimeError" class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3 mt-3">
+                                <label for="bookServiceType" class="form-label" style="font-weight:700;">Service Type</label>
+                                <input type="text" class="form-control" id="bookServiceType">
+                            </div>
+                            <div class="mb-3">
+                                <label for="bookNotes" class="form-label" style="font-weight:700;">Notes / Message</label>
+                                <textarea id="bookNotes" class="form-control" rows="3" maxlength="1500"></textarea>
+                            </div>
+                            <div id="appointmentFormFeedback" class="small" role="status" aria-live="polite"></div>
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" class="btn btn-primary" id="bookSubmitBtn">Submit Request</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -8119,8 +8182,214 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	            $("#heroPortfolio").on("click", function(){ $("#contact").trigger("click"); });
 	            $("#heroExplore").on("click", function(){ $("#services").trigger("click"); });
 	            $("#heroConsult").on("click", function(){
-	                window.location.href = "mailto:magxsolutios2026@gmail.com";
+	                if (window.openAppointmentBooking) {
+	                    window.openAppointmentBooking();
+	                }
 	            });
+	            $("#servicesBookAppointment").on("click", function(){
+	                if (window.openAppointmentBooking) {
+	                    window.openAppointmentBooking();
+	                }
+	            });
+
+	            (function(){
+	                const modalEl = document.getElementById("appointmentModal");
+	                if(!modalEl || typeof bootstrap === "undefined"){ return; }
+	                const modal = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true });
+	                const $form = $("#appointmentForm");
+	                const $date = $("#bookDate");
+	                const $time = $("#bookTime");
+	                const $submit = $("#bookSubmitBtn");
+	                const $feedback = $("#appointmentFormFeedback");
+	                const bookingApiUrl = "appointments_api.php";
+
+	                function clearFieldError(fieldId){
+	                    const $field = $("#" + fieldId);
+	                    const $error = $("#" + fieldId + "Error");
+	                    $field.removeClass("is-invalid");
+	                    $error.text("");
+	                }
+
+	                function setFieldError(fieldId, message){
+	                    const $field = $("#" + fieldId);
+	                    const $error = $("#" + fieldId + "Error");
+	                    $field.addClass("is-invalid");
+	                    $error.text(message || "Invalid field.");
+	                }
+
+	                function resetErrors(){
+	                    ["bookFullName", "bookEmail", "bookPhone", "bookDate", "bookTime"].forEach(clearFieldError);
+	                    $feedback.removeClass("text-danger text-success").text("");
+	                }
+
+	                function setFeedback(message, isError){
+	                    $feedback.removeClass("text-danger text-success");
+	                    $feedback.addClass(isError ? "text-danger" : "text-success").text(message || "");
+	                }
+
+	                function todayIso(){
+	                    const now = new Date();
+	                    const yyyy = now.getFullYear();
+	                    const mm = String(now.getMonth() + 1).padStart(2, "0");
+	                    const dd = String(now.getDate()).padStart(2, "0");
+	                    return yyyy + "-" + mm + "-" + dd;
+	                }
+
+	                function escapeHtml(text){
+	                    return String(text || "")
+	                        .replace(/&/g, "&amp;")
+	                        .replace(/</g, "&lt;")
+	                        .replace(/>/g, "&gt;")
+	                        .replace(/\"/g, "&quot;")
+	                        .replace(/'/g, "&#39;");
+	                }
+
+	                function loadSlotsForDate(dateValue){
+	                    if(!dateValue){
+	                        $time.html('<option value=\"\">Select a time slot</option>');
+	                        return;
+	                    }
+
+	                    $time.prop("disabled", true).html('<option value=\"\">Loading available slots...</option>');
+	                    $.ajax({
+	                        url: bookingApiUrl,
+	                        method: "POST",
+	                        dataType: "json",
+	                        data: { action: "AVAILABLE_SLOTS", date: dateValue },
+	                        success: function(res){
+	                            if(!res || !res.success || !Array.isArray(res.slots)){
+	                                $time.html('<option value=\"\">No slots available</option>').prop("disabled", true);
+	                                return;
+	                            }
+	                            let html = '<option value=\"\">Select a time slot</option>';
+	                            let hasAvailable = false;
+	                            res.slots.forEach(function(slot){
+	                                const available = !!slot.is_available;
+	                                const remaining = Number.isFinite(parseInt(slot.remaining, 10)) ? parseInt(slot.remaining, 10) : 0;
+	                                const label = String(slot.label || slot.value || "");
+	                                const value = String(slot.value || "");
+	                                const suffix = available ? "" : " (Fully booked)";
+	                                html += '<option value=\"' + escapeHtml(value) + '\" ' + (available ? "" : "disabled") + '>' + escapeHtml(label + suffix) + (available && remaining > 1 ? " (" + remaining + " slots left)" : "") + '</option>';
+	                                if (available) { hasAvailable = true; }
+	                            });
+	                            $time.html(html).prop("disabled", !hasAvailable);
+	                        },
+	                        error: function(){
+	                            $time.html('<option value=\"\">Failed to load slots</option>').prop("disabled", true);
+	                        }
+	                    });
+	                }
+
+	                function validateForm(){
+	                    resetErrors();
+	                    const values = {
+	                        full_name: String($("#bookFullName").val() || "").trim(),
+	                        email: String($("#bookEmail").val() || "").trim(),
+	                        phone: String($("#bookPhone").val() || "").trim(),
+	                        preferred_date: String($date.val() || "").trim(),
+	                        preferred_time: String($time.val() || "").trim(),
+	                        service_type: String($("#bookServiceType").val() || "").trim(),
+	                        notes: String($("#bookNotes").val() || "").trim()
+	                    };
+
+	                    let valid = true;
+	                    if(!values.full_name){
+	                        setFieldError("bookFullName", "Full name is required.");
+	                        valid = false;
+	                    }
+
+	                    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+	                    if(!values.email || !emailRegex.test(values.email)){
+	                        setFieldError("bookEmail", "A valid email address is required.");
+	                        valid = false;
+	                    }
+
+	                    if(!values.preferred_date){
+	                        setFieldError("bookDate", "Preferred date is required.");
+	                        valid = false;
+	                    }
+
+	                    if(!values.preferred_time){
+	                        setFieldError("bookTime", "Preferred time slot is required.");
+	                        valid = false;
+	                    }
+
+	                    return { valid: valid, values: values };
+	                }
+
+	                window.openAppointmentBooking = function(){
+	                    resetErrors();
+	                    $form[0].reset();
+	                    $time.html('<option value=\"\">Select a time slot</option>').prop("disabled", true);
+	                    $date.attr("min", todayIso());
+	                    modal.show();
+	                };
+
+	                $date.on("change", function(){
+	                    clearFieldError("bookDate");
+	                    clearFieldError("bookTime");
+	                    loadSlotsForDate(String($(this).val() || ""));
+	                });
+
+	                $form.on("submit", function(e){
+	                    e.preventDefault();
+	                    const check = validateForm();
+	                    if(!check.valid){
+	                        setFeedback("Please correct the highlighted fields.", true);
+	                        return;
+	                    }
+
+	                    $submit.prop("disabled", true).text("Submitting...");
+	                    setFeedback("", false);
+
+	                    const payload = Object.assign({ action: "SUBMIT" }, check.values);
+	                    $.ajax({
+	                        url: bookingApiUrl,
+	                        method: "POST",
+	                        dataType: "json",
+	                        data: payload,
+	                        success: function(res){
+	                            if(res && res.success){
+	                                setFeedback("Your appointment request has been submitted and is pending admin approval.", false);
+	                                $submit.text("Submitted");
+	                                loadSlotsForDate(check.values.preferred_date);
+	                                setTimeout(function(){
+	                                    modal.hide();
+	                                    $submit.prop("disabled", false).text("Submit Request");
+	                                }, 1200);
+	                                return;
+	                            }
+	                            if(res && res.errors){
+	                                Object.keys(res.errors).forEach(function(key){
+	                                    const map = {
+	                                        full_name: "bookFullName",
+	                                        email: "bookEmail",
+	                                        phone: "bookPhone",
+	                                        preferred_date: "bookDate",
+	                                        preferred_time: "bookTime"
+	                                    };
+	                                    if(map[key]){
+	                                        setFieldError(map[key], String(res.errors[key] || ""));
+	                                    }
+	                                });
+	                            }
+	                            setFeedback((res && res.message) ? String(res.message) : "Failed to submit appointment.", true);
+	                            $submit.prop("disabled", false).text("Submit Request");
+	                        },
+	                        error: function(xhr){
+	                            let msg = "Failed to submit appointment.";
+	                            if(xhr && xhr.responseJSON && xhr.responseJSON.message){
+	                                msg = String(xhr.responseJSON.message);
+	                            }
+	                            setFeedback(msg, true);
+	                            $submit.prop("disabled", false).text("Submit Request");
+	                            if(check.values.preferred_date){
+	                                loadSlotsForDate(check.values.preferred_date);
+	                            }
+	                        }
+	                    });
+	                });
+	            })();
 	
 	            // Scroll reveal animations
             const observer = new IntersectionObserver((entries) => {
