@@ -101,7 +101,7 @@ if ($action === 'SUBMIT') {
             : false;
         $now = new DateTime('now', $tz);
         if (!$selectedDateTime || $selectedDateTime < $now) {
-            $errors['preferred_date'] = 'Preferred date cannot be in the past.';
+            $errors['preferred_time'] = 'Preferred time slot has already passed. Choose a future time.';
         }
     }
 
