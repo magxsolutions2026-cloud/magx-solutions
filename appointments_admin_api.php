@@ -105,11 +105,12 @@ if ($action === 'DECIDE') {
     }
 
     $timezone = (string)(magx_appointment_config()['timezone'] ?? 'UTC');
+    $warnings = [];
 
     $google = magx_create_google_calendar_event($appointment, $zoomLink, $timezone);
     if (!$google['success']) {
-        magx_db_execute($db, "UPDATE appointments SET status = 'pending', zoom_link = NULL WHERE id = :id", [':id' => $id]);
-        magx_json_response(['success' => false, 'message' => (string)$google['message']], 500);
+        $warnings[] = 'Google calendar sync failed: ' . (string)$google['message'];
+        $google = ['success' => false, 'event_id' => null];
     }
 
     $outlook = ['success' => false, 'event_id' => null, 'message' => 'Outlook calendar is not configured.'];
@@ -117,7 +118,7 @@ if ($action === 'DECIDE') {
     if (magx_outlook_env_ready()) {
         $outlook = magx_create_outlook_calendar_event($appointment, $zoomLink, $timezone);
         if (!$outlook['success']) {
-            $outlookWarning = (string)$outlook['message'];
+            $outlookWarning = 'Outlook calendar sync failed: ' . (string)$outlook['message'];
         }
     } else {
         $outlookWarning = 'Outlook calendar is not configured.';
@@ -126,8 +127,7 @@ if ($action === 'DECIDE') {
     $calendarLinks = magx_build_add_to_calendar_links($appointment, $zoomLink, $timezone);
     $emailRes = magx_send_appointment_approval_emails($appointment, $calendarLinks, $zoomLink, $timezone);
     if (!$emailRes['success']) {
-        magx_db_execute($db, "UPDATE appointments SET status = 'pending', zoom_link = NULL WHERE id = :id", [':id' => $id]);
-        magx_json_response(['success' => false, 'message' => (string)$emailRes['message']], 500);
+        $warnings[] = 'Notification send failed: ' . (string)$emailRes['message'];
     }
 
     magx_db_execute(
@@ -137,7 +137,7 @@ if ($action === 'DECIDE') {
              outlook_event_id = :o
          WHERE id = :id AND status = 'approved'",
         [
-            ':g' => (string)$google['event_id'],
+            ':g' => $google['success'] ? (string)$google['event_id'] : null,
             ':o' => $outlook['success'] ? (string)$outlook['event_id'] : null,
             ':id' => $id,
         ]
@@ -145,7 +145,10 @@ if ($action === 'DECIDE') {
 
     $message = 'Appointment approved and notifications sent.';
     if ($outlookWarning !== '') {
-        $message .= ' Outlook sync skipped: ' . $outlookWarning;
+        $warnings[] = $outlookWarning;
+    }
+    if (!empty($warnings)) {
+        $message = 'Appointment approved. ' . implode(' ', $warnings);
     }
 
     magx_json_response([
