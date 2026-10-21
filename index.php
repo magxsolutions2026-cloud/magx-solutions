@@ -6274,6 +6274,29 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
             100%{ transform: translate3d(8px,-6px,0) scale(1.04); }
         }
 
+        /* Award-led dimensional featured work carousel */
+        #px-featured-projects{--px-award-cyan:#65e7ff;--px-award-gold:#ffd36b;position:relative;isolation:isolate;}
+        #px-featured-projects::before{content:"";position:absolute;inset:8% 7%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 50% 48%,rgba(38,142,255,.22),transparent 65%);filter:blur(24px);}
+        #px-featured-projects .px-carousel{perspective:1500px;padding:8px 42px 20px;}
+        #px-featured-projects .px-carousel-viewport{overflow:hidden;border:1px solid rgba(110,211,255,.22);border-radius:26px;background:linear-gradient(135deg,rgba(7,20,43,.9),rgba(11,38,75,.76));box-shadow:0 28px 80px rgba(0,11,35,.32),inset 0 1px rgba(255,255,255,.1);backdrop-filter:blur(18px);transform:rotateX(1.2deg);}
+        #px-featured-projects .px-carousel-viewport>.px-kicker{display:inline-flex;align-items:center;gap:10px;margin:22px 26px 18px;color:#8eeaff;font-size:11px;letter-spacing:.2em;font-weight:800;}
+        #px-featured-projects .px-carousel-viewport>.px-kicker::before{content:"";width:22px;height:1px;background:var(--px-award-cyan);box-shadow:0 0 12px var(--px-award-cyan);}
+        #px-featured-projects .px-carousel-track{align-items:stretch;padding:0 0 24px;}
+        #px-featured-projects .px-carousel-slide{padding:0 22px;box-sizing:border-box;}
+        #px-featured-projects .px-carousel .px-project{overflow:hidden;border:1px solid rgba(133,213,255,.22);border-radius:20px;background:linear-gradient(145deg,rgba(15,34,64,.96),rgba(7,18,39,.98));box-shadow:0 22px 50px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.1);transform:translateZ(0);transition:transform .45s ease,box-shadow .45s ease,border-color .45s ease;}
+        #px-featured-projects .px-carousel-slide:hover .px-project{transform:translateY(-5px) rotateX(1deg);border-color:rgba(101,231,255,.55);box-shadow:0 30px 65px rgba(0,0,0,.36),0 0 35px rgba(48,184,255,.1);}
+        #px-featured-projects .px-project h4{color:#f1f8ff;}#px-featured-projects .px-project p{color:#b9cbe0;}#px-featured-projects .px-project-year{color:#79e4ff;}
+        #px-featured-projects .px-project-stats{color:#d6e9ff;border-color:rgba(111,200,255,.2);background:rgba(42,88,137,.2);}
+        #px-featured-projects .px-project-media.px-project-photo{border-block:1px solid rgba(132,211,255,.17);background:#08172e;}
+        #px-featured-projects .px-project-media.px-project-photo img{object-position:center 54%;}
+        #px-featured-projects .px-award-slide .px-project-media{aspect-ratio:16/8.5;min-height:280px;}
+        #px-featured-projects .px-award-slide .px-project-media img{object-fit:cover;object-position:center 55%;}
+        #px-featured-projects .px-award-seal{display:inline-flex;align-items:center;gap:9px;padding:9px 13px;border-radius:999px;color:#ffe5a0;background:rgba(255,201,81,.1);border:1px solid rgba(255,211,107,.35);font-size:10px;font-weight:800;letter-spacing:.1em;}
+        #px-featured-projects .px-carousel-arrow{z-index:3;width:44px;height:44px;color:#b8f5ff;border:1px solid rgba(101,231,255,.38);background:rgba(9,28,54,.9);box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px rgba(255,255,255,.12);transition:transform .2s ease,background .2s ease,box-shadow .2s ease;}
+        #px-featured-projects .px-carousel-arrow:hover{background:#0b4268;transform:translateY(-50%) scale(1.08);box-shadow:0 0 24px rgba(101,231,255,.22);}
+        @media(max-width:700px){#px-featured-projects .px-carousel{padding:6px 20px 16px;}#px-featured-projects .px-carousel-slide{padding:0 8px;}#px-featured-projects .px-carousel-viewport{border-radius:20px;transform:none;}#px-featured-projects .px-carousel-viewport>.px-kicker{margin:18px 16px 14px;font-size:9px;}#px-featured-projects .px-award-slide .px-project-media{aspect-ratio:4/3;min-height:190px;}#px-featured-projects .px-carousel-arrow{width:36px;height:36px;}}
+        @media(prefers-reduced-motion:reduce){#px-featured-projects .px-carousel-track,#px-featured-projects .px-project,#px-featured-projects .px-carousel-arrow{transition:none!important;}}
+
         /* Portfolio palette sync with side nav */
         #contactcontainer{
             --px-bg-1: #041124;
@@ -7125,7 +7148,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	                                <div class="px-stat"><strong>2</strong><span>Certifications</span></div>
 	                            </div>
 	                            <div class="px-cta-row">
-	                                <a class="px-btn px-btn-primary" href="#px-featured-projects"><i class="fas fa-layer-group" aria-hidden="true"></i>View Featured Work</a>
+	                                <a class="px-btn px-btn-primary" href="#px-featured-projects"><i class="fas fa-layer-group" aria-hidden="true"></i>Awards &amp; Featured Work</a>
 	                                <a class="px-btn px-btn-light" href="mailto:magxsolutios2026@gmail.com"><i class="fas fa-envelope" aria-hidden="true"></i>Start a Project</a>
 	                            </div>
 	                        </div>
@@ -7289,16 +7312,30 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 
 	                    <section id="px-featured-projects" class="px-block px-reveal reveal">
 	                        <div class="px-featured-stack">
-	                            <section class="px-carousel" id="pxFeaturedCarousel" aria-label="Projects Carousel">
+	                            <section class="px-carousel" id="pxFeaturedCarousel" aria-label="Awards and featured work carousel">
 	                                <button type="button" class="px-carousel-arrow prev" id="pxFeaturedPrev" aria-label="Previous project">
 	                                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
 	                                </button>
 	                                <div class="px-carousel-viewport">
-	                                        <span class="px-kicker">FEATURED PROJECTS</span>
+	                                        <span class="px-kicker">HONORS &amp; FEATURED WORK</span>
 	                                        <br>
 	                                        <br>
 	                                    <div class="px-carousel-track">
-	                                        <article class="px-project px-carousel-slide">
+	                                        <article class="px-project px-carousel-slide px-award-slide">
+                                            <div class="px-project-top">
+                                                <div class="px-project-meta"><span class="px-project-year">Community Impact ? 2026</span></div>
+                                                <h4>Plaque of Recognition: Outstanding DRRM Innovator</h4>
+                                                <p>City of Ilagan CDRRMO recognized me for creative disaster risk reduction and management solutions and outstanding contributions to community preparedness and resilience.</p>
+                                            </div>
+                                            <div class="px-project-media px-project-photo">
+                                                <img src="assets/drrm-innovator-award.jpg" alt="Plaque recognizing Mark Angelo H. Guillermo as an Outstanding DRRM Innovator at a City of Ilagan event" onerror="this.style.display='none';">
+                                            </div>
+                                            <div class="px-project-bottom">
+                                                <div class="px-project-stats">Awarded by the City of Ilagan City Disaster Risk Reduction and Management Office.</div>
+                                                <div class="px-cta-row"><span class="px-award-seal"><i class="fas fa-award" aria-hidden="true"></i> OUTSTANDING DRRM INNOVATOR</span></div>
+                                            </div>
+                                        </article>
+                                        <article class="px-project px-carousel-slide">
 	                                            <div class="px-project-top">
 	                                                <div class="px-project-meta"><span class="px-project-year">Flagship Build • 2025</span></div>
 	                                                <h4>Integrated Record Management System (TMC)</h4>
