@@ -1585,61 +1585,52 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			            will-change:color, text-shadow, transform;
 			        }
 			        #title .hero-title .hero-letter-space{width:.32em}
-			        /* A tiny spark rides just above whichever letter the current is passing through. */
-			        #title .hero-title .hero-letter::after{
-			            content:"";
+			        /* Realistic electric current: an animated canvas lightning arc travels letter to letter. */
+			        #title .hero-title .hero-electric-canvas{
 			            position:absolute;
-			            left:50%;
-			            top:-0.16em;
-			            width:0.16em;
-			            height:0.16em;
-			            border-radius:50%;
-			            background:#f2fdff;
-			            box-shadow:0 0 6px #fff, 0 0 14px #6fe8ff, 0 0 26px #00c8ff, 0 0 44px rgba(0,140,255,.9);
-			            opacity:0;
-			            transform:translate(-50%, 0) scale(.4);
+			            inset:0;
+			            width:100%;
+			            height:100%;
 			            pointer-events:none;
-			            animation:heroSparkDot 3.4s ease-in-out infinite;
-			            animation-delay:var(--letter-delay, calc(var(--letter-index) * 85ms));
+			            z-index:2;
+			            mix-blend-mode:screen;
 			        }
 			        @keyframes heroLetterSpark{
-			            0%, 9%, 100%{
+			            0%, 8%, 100%{
 			                color:rgba(255,255,255,.98);
-			                text-shadow:0 18px 70px rgba(0,0,0,.55), 0 0 28px rgba(0,170,255,.12);
-			                transform:translateY(0) skewX(0deg);
+			                text-shadow:0 18px 70px rgba(0,0,0,.55), 0 0 22px rgba(0,170,255,.10);
+			                transform:translate3d(0,0,0) skewX(0deg);
+			            }
+			            1.2%{
+			                color:#ffffff;
+			                text-shadow:0 0 2px #fff, 0 0 9px #c9f8ff, 0 0 20px #00d5ff, 0 0 42px #008cff, 0 0 82px rgba(0,170,255,.9);
+			                transform:translate3d(-1px,-1px,0) skewX(-6deg);
 			            }
 			            2%{
-			                color:#ffffff;
-			                text-shadow:0 0 4px #fff, 0 0 12px #b8f6ff, 0 0 24px #00c8ff, 0 0 46px #008cff, 0 0 78px rgba(0,170,255,.95);
-			                transform:translateY(-1px) skewX(-7deg);
+			                color:#bdefff;
+			                text-shadow:0 0 2px #fff, 0 0 6px #6fe8ff, 0 0 14px #009dff, 0 0 28px rgba(0,140,255,.7);
+			                transform:translate3d(1px,1px,0) skewX(4deg);
 			            }
-			            3.6%{
-			                color:#d9f9ff;
-			                text-shadow:0 0 3px #fff, 0 0 9px #74e5ff, 0 0 18px #00a8ff, 0 0 36px rgba(0,140,255,.8);
-			                transform:translateY(1px) skewX(5deg);
+			            2.9%{
+			                color:#ffffff;
+			                text-shadow:0 0 3px #fff, 0 0 13px #bff8ff, 0 0 26px #00c8ff, 0 0 52px #008cff, 0 0 92px rgba(0,170,255,.85);
+			                transform:translate3d(-1px,1px,0) skewX(-4deg);
+			            }
+			            4.3%{
+			                color:#e8fcff;
+			                text-shadow:0 0 2px #fff, 0 0 8px #7cecff, 0 0 18px #00a8ff, 0 0 36px rgba(0,140,255,.6);
+			                transform:translate3d(0,0,0) skewX(0deg);
 			            }
 			            5.4%{
 			                color:#ffffff;
-			                text-shadow:0 0 5px #fff, 0 0 16px #8fefff, 0 0 32px #00c8ff, 0 0 60px rgba(0,170,255,.9);
-			                transform:translateY(0) skewX(0deg);
-			            }
-			            7%{
-			                color:#eafcff;
-			                text-shadow:0 0 4px #fff, 0 0 10px #5fdcff, 0 0 22px #008cff, 0 0 40px rgba(0,170,255,.6);
-			                transform:translateY(0) skewX(0deg);
+			                text-shadow:0 0 2px #fff, 0 0 7px #8fefff, 0 0 16px #00b8ff, 0 0 30px rgba(0,140,255,.5);
+			                transform:translate3d(0,0,0) skewX(0deg);
 			            }
 			        }
-			        @keyframes heroSparkDot{
-			            0%, 9%, 100%{opacity:0; transform:translate(-50%, 0) scale(.4);}
-			            2%{opacity:1; transform:translate(-50%, -0.35em) scale(1.15);}
-			            5%{opacity:.75; transform:translate(-50%, -0.2em) scale(.85);}
-			            7%{opacity:0; transform:translate(-50%, 0) scale(.4);}
+			        @media (prefers-reduced-motion: reduce){
+			            #title .hero-title .hero-letter{animation:none}
+			            #title .hero-title .hero-electric-canvas{display:none}
 			        }
-				        @media (prefers-reduced-motion: reduce){
-			            #title .hero-title .hero-letter,
-			            #title .hero-title .hero-letter::after{animation:none}
-			            #title .hero-title .hero-letter::after{opacity:0}
-				        }
 
 			        #title hr{
 			            width: min(680px, 72%);
@@ -7896,6 +7887,157 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			                    this.appendChild(letter);
 			                });
 				            });
+
+			            // Render a realistic lightning arc that jumps from letter to letter.
+			            (function initHeroElectric(){
+			                const titles = Array.prototype.slice.call(document.querySelectorAll(".hero-title"));
+			                if (!titles.length) { return; }
+			                const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+			                if (reduceMotion) { return; }
+
+			                const CYCLE = 3400;
+			                const TRAVEL = 2400;
+
+			                function drawBolt(ctx, a, b, alpha, scale){
+			                    const dx = b.x - a.x;
+			                    const dy = b.y - a.y;
+			                    const dist = Math.hypot(dx, dy);
+			                    if (dist < 2) { return; }
+			                    const nx = -dy / dist;
+			                    const ny = dx / dist;
+			                    const steps = 8;
+			                    const rough = Math.min(9, dist * 0.22);
+			                    const pts = [{ x: a.x, y: a.y }];
+			                    for (let s = 1; s < steps; s++){
+			                        const t = s / steps;
+			                        const jitter = (Math.random() - 0.5) * rough;
+			                        pts.push({
+			                            x: a.x + dx * t + nx * jitter,
+			                            y: a.y + dy * t + ny * jitter
+			                        });
+			                    }
+			                    pts.push({ x: b.x, y: b.y });
+
+			                    ctx.save();
+			                    ctx.globalCompositeOperation = "lighter";
+			                    ctx.lineJoin = "round";
+			                    ctx.lineCap = "round";
+			                    ctx.beginPath();
+			                    ctx.moveTo(pts[0].x, pts[0].y);
+			                    for (let p = 1; p < pts.length; p++){ ctx.lineTo(pts[p].x, pts[p].y); }
+
+			                    ctx.shadowColor = "#00c8ff";
+			                    ctx.shadowBlur = 18;
+			                    ctx.strokeStyle = "rgba(120,230,255," + (alpha * 0.55) + ")";
+			                    ctx.lineWidth = 3.4 * scale;
+			                    ctx.stroke();
+
+			                    ctx.shadowBlur = 8;
+			                    ctx.strokeStyle = "rgba(255,255,255," + Math.min(1, alpha + 0.25) + ")";
+			                    ctx.lineWidth = 1.15 * scale;
+			                    ctx.stroke();
+
+			                    if (Math.random() < 0.6){
+			                        const t = 0.3 + Math.random() * 0.4;
+			                        const bx = a.x + dx * t;
+			                        const by = a.y + dy * t;
+			                        const ang = Math.atan2(dy, dx) + (Math.random() < 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.6);
+			                        const len = Math.min(20, dist * 0.5) * (0.5 + Math.random() * 0.7);
+			                        ctx.beginPath();
+			                        ctx.moveTo(bx, by);
+			                        ctx.lineTo(bx + Math.cos(ang) * len * 0.55 + (Math.random() - 0.5) * 4, by + Math.sin(ang) * len * 0.55);
+			                        ctx.lineTo(bx + Math.cos(ang) * len, by + Math.sin(ang) * len);
+			                        ctx.shadowBlur = 8;
+			                        ctx.strokeStyle = "rgba(190,245,255," + (alpha * 0.7) + ")";
+			                        ctx.lineWidth = 0.8;
+			                        ctx.stroke();
+			                    }
+			                    ctx.restore();
+			                }
+
+			                function sparkBurst(ctx, p, count, alpha){
+			                    ctx.save();
+			                    ctx.globalCompositeOperation = "lighter";
+			                    ctx.shadowColor = "#00c8ff";
+			                    ctx.shadowBlur = 12;
+			                    ctx.strokeStyle = "rgba(210,248,255," + alpha + ")";
+			                    ctx.lineWidth = 0.9;
+			                    for (let s = 0; s < count; s++){
+			                        const ang = Math.random() * Math.PI * 2;
+			                        const len = 4 + Math.random() * 12;
+			                        ctx.beginPath();
+			                        ctx.moveTo(p.x, p.y);
+			                        ctx.lineTo(p.x + Math.cos(ang) * len, p.y + Math.sin(ang) * len);
+			                        ctx.stroke();
+			                    }
+			                    ctx.restore();
+			                }
+
+			                titles.forEach(function(title){
+			                    const canvas = document.createElement("canvas");
+			                    canvas.className = "hero-electric-canvas";
+			                    canvas.setAttribute("aria-hidden", "true");
+			                    title.appendChild(canvas);
+			                    const ctx = canvas.getContext("2d");
+			                    if (!ctx) { return; }
+
+			                    const letters = title.querySelectorAll(".hero-letter");
+			                    let width = 0;
+			                    let height = 0;
+
+			                    function resize(){
+			                        const rect = title.getBoundingClientRect();
+			                        width = rect.width;
+			                        height = rect.height;
+			                        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+			                        canvas.width = Math.max(1, Math.round(width * dpr));
+			                        canvas.height = Math.max(1, Math.round(height * dpr));
+			                        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			                    }
+
+			                    function pointOf(el, hostRect){
+			                        const r = el.getBoundingClientRect();
+			                        return {
+			                            x: r.left - hostRect.left + r.width / 2,
+			                            y: r.top - hostRect.top + r.height * 0.22
+			                        };
+			                    }
+
+			                    function frame(now){
+			                        requestAnimationFrame(frame);
+			                        if (!width || !height || letters.length < 2) { return; }
+			                        ctx.clearRect(0, 0, width, height);
+			                        const elapsed = now % CYCLE;
+			                        if (elapsed > TRAVEL) { return; }
+			                        const hostRect = title.getBoundingClientRect();
+			                        const head = (elapsed / TRAVEL) * (letters.length - 1);
+			                        const i = Math.min(letters.length - 2, Math.floor(head));
+			                        const a = pointOf(letters[i], hostRect);
+			                        const b = pointOf(letters[i + 1], hostRect);
+			                        if (Math.abs(b.y - a.y) > 30) { return; }
+			                        const alpha = 0.7 + Math.random() * 0.3;
+			                        drawBolt(ctx, a, b, alpha, 1);
+			                        if (i > 0){
+			                            const prev = pointOf(letters[i - 1], hostRect);
+			                            if (Math.abs(a.y - prev.y) <= 30){
+			                                drawBolt(ctx, prev, a, alpha * 0.45, 0.8);
+			                            }
+			                        }
+			                        if (Math.random() < 0.45){
+			                            sparkBurst(ctx, b, 2 + Math.floor(Math.random() * 3), alpha * 0.8);
+			                        }
+			                    }
+
+			                    resize();
+			                    if (window.ResizeObserver){
+			                        new ResizeObserver(resize).observe(title);
+			                    } else {
+			                        window.addEventListener("resize", resize);
+			                    }
+			                    window.addEventListener("load", resize);
+			                    requestAnimationFrame(frame);
+			                });
+			            })();
 
 				            function enforceLockedAutoplay(videoEl){
 				                if (!videoEl || videoEl.dataset.lockAutoplayInit === "1") { return; }
