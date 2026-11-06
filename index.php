@@ -1448,52 +1448,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			            aspect-ratio: 4 / 5;
 			            width: clamp(220px, 62vw, 360px);
 			            max-width: 100%;
-			            transform-style: preserve-3d;
-			            will-change: transform;
-			            animation: heroCardFloat 7s ease-in-out infinite;
 			        }
-			        #title .hero-media-card::after{
-			            content:"";
-			            position:absolute;
-			            inset:-35% -70%;
-			            z-index:1;
-			            pointer-events:none;
-			            background:linear-gradient(110deg, transparent 42%, rgba(190,240,255,.16) 49%, rgba(255,255,255,.34) 50%, rgba(0,170,255,.16) 52%, transparent 59%);
-			            transform:translateX(-65%) rotate(8deg);
-			            animation:heroMediaSweep 8s ease-in-out infinite;
-			        }
-			        #title .hero-media-card::before{
-			            content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
-			            background:radial-gradient(260px circle at var(--hero-glow-x,50%) var(--hero-glow-y,50%), rgba(0,170,255,.22), transparent 72%);
-			            opacity:0; transition:opacity .25s ease;
-			        }
-			        #title .hero-media-card:hover::before{opacity:1}
-			        #title .hero-media-orbit{
-			            position:absolute;
-			            z-index:3;
-			            top:16px;
-			            left:16px;
-			            display:flex;
-			            align-items:center;
-			            gap:8px;
-			            padding:8px 10px;
-			            border:1px solid rgba(255,255,255,.2);
-			            border-radius:999px;
-			            background:rgba(5,14,27,.55);
-			            color:rgba(255,255,255,.9);
-			            font:600 10px/1 'JetBrains Mono',monospace;
-			            letter-spacing:.14em;
-			            text-transform:uppercase;
-			            backdrop-filter:blur(8px);
-			        }
-			        #title .hero-media-orbit::before{
-			            content:""; width:6px; height:6px; border-radius:50%;
-			            background:#52d9ff; box-shadow:0 0 12px #00aaff;
-			            animation:heroStatusPulse 2.2s ease-in-out infinite;
-			        }
-			        @keyframes heroCardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-			        @keyframes heroMediaSweep{0%,28%{transform:translateX(-70%) rotate(8deg);opacity:0}38%{opacity:1}64%,100%{transform:translateX(70%) rotate(8deg);opacity:0}}
-			        @keyframes heroStatusPulse{50%{opacity:.45;box-shadow:0 0 4px #00aaff}}
 			        #title .hero-robot-video{
 			            width: 100%;
 			            height: 100%;
@@ -1556,25 +1511,6 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			            backdrop-filter: blur(14px);
 			            -webkit-backdrop-filter: blur(14px);
 			            box-sizing: border-box;
-			        }
-			        #title .hero-copy-card > *{ animation:heroCopyReveal .7s cubic-bezier(.2,.8,.2,1) both; }
-			        #title .hero-copy-card > *:nth-child(1){animation-delay:.12s}
-			        #title .hero-copy-card > *:nth-child(2){animation-delay:.2s}
-			        #title .hero-copy-card > *:nth-child(3){animation-delay:.28s}
-			        #title .hero-copy-card > *:nth-child(4){animation-delay:.36s}
-			        #title .hero-copy-card > *:nth-child(5){animation-delay:.44s}
-			        #title .hero-copy-card > *:nth-child(6){animation-delay:.52s}
-			        #title .hero-copy-card > *:nth-child(7){animation-delay:.6s}
-			        #title .hero-copy-card > *:nth-child(8){animation-delay:.68s}
-			        @keyframes heroCopyReveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-			        #title .hero-specialties{
-			            display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
-			            margin:16px 0 0; padding:0; list-style:none;
-			        }
-			        #title .hero-specialties li{
-			            padding:7px 10px; border:1px solid rgba(255,255,255,.12); border-radius:999px;
-			            background:rgba(0,0,0,.16); color:rgba(226,245,255,.78);
-			            font-size:11px; letter-spacing:.05em;
 			        }
 
 				        @media (min-width: 992px){
@@ -1668,22 +1604,17 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 				            filter: drop-shadow(0 0 16px rgba(0,170,255,0.40)) drop-shadow(0 0 54px rgba(0,170,255,0.18));
 				            opacity: 0.95;
 				            will-change: background-position, opacity, filter;
-			            animation: magxElectricPass 12s ease-in-out infinite;
+				            animation: magxElectricPass 7.2s linear infinite;
 				        }
 				        @keyframes magxElectricPass{
 				            from { background-position: -160% 50%; }
-			            18% { background-position: 160% 50%; }
-			            100% { background-position: 160% 50%; }
+				            to { background-position: 160% 50%; }
 				        }
 				        @media (prefers-reduced-motion: reduce){
 				            #title .hero-title::after{
 				                animation: none;
 				                opacity: 0.55;
 				            }
-		            #title .hero-media-card,
-		            #title .hero-media-card::after,
-		            #title .hero-media-orbit::before,
-		            #title .hero-copy-card > *{animation:none!important;transform:none!important;opacity:1!important}
 				        }
 
 			        #title hr{
@@ -7059,7 +6990,6 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 		                    <div class="hero-grid">
 		                        <div class="hero-media" aria-label="MAGX robot video">
 		                            <div class="hero-media-card">
-			                                <span class="hero-media-orbit" aria-hidden="true">MAGX / SYSTEMS ONLINE</span>
 		                                <video class="hero-robot-video smooth-loop-video magx-lock-video" autoplay muted playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nofullscreen noremoteplayback nodownload" oncontextmenu="return false;" data-overlap="0.8" poster="logomagx.png">
 		                                    <?php if ($magxRobotVideoSrc !== ''): ?>
 		                                    <source src="<?php echo htmlspecialchars($magxRobotVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
@@ -7092,11 +7022,6 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 		                                <hr>
 		                                <p class="hero-kicker">EST 2026</p>
 		                                <p class="hero-tagline">Magx build secure web systems and workflow automations that replace manual work with fast, trackable processes.</p>
-		                                <ul class="hero-specialties" aria-label="What MAGX does">
-		                                    <li>Secure web systems</li>
-		                                    <li>Workflow automation</li>
-		                                    <li>Digital experiences</li>
-		                                </ul>
 		                                <div class="hero-cta">
 		                                    <button id="heroConsult" type="button" class="btn btn-primary">BOOK APPOINTMENT</button>
 		                                    <button id="heroPortfolio" type="button" class="btn btn-outline-light">View Portfolio</button>
@@ -8203,19 +8128,6 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			                });
 			            }
 			            syncHeroNeonRadius();
-		            (function initHeroPointerGlow(){
-		                const card = document.querySelector("#title .hero-media-card");
-		                if(!card || !window.matchMedia || window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches){ return; }
-		                card.addEventListener("pointermove", function(event){
-		                    const rect = card.getBoundingClientRect();
-		                    card.style.setProperty("--hero-glow-x", ((event.clientX - rect.left) / rect.width * 100) + "%");
-		                    card.style.setProperty("--hero-glow-y", ((event.clientY - rect.top) / rect.height * 100) + "%");
-		                });
-		                card.addEventListener("pointerleave", function(){
-		                    card.style.removeProperty("--hero-glow-x");
-		                    card.style.removeProperty("--hero-glow-y");
-		                });
-		            })();
 			            let heroNeonT = null;
 			            window.addEventListener("resize", function(){
 			                clearTimeout(heroNeonT);
