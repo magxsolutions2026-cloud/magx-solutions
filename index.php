@@ -1576,45 +1576,69 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 				                0 18px 70px rgba(0,0,0,0.55),
 				                0 0 28px rgba(0,170,255,0.12);
 				        }
-				        /* Electric-blue streak pass over the title (animated overlay only). */
-				        #title .hero-title::after{
-				            content: attr(data-text);
-				            position: absolute;
-				            inset: 0;
-				            pointer-events: none;
-				            white-space: inherit;
-				            color: transparent;
-				            -webkit-text-fill-color: transparent;
-				            background-image: linear-gradient(
-				                90deg,
-				                transparent 0%,
-				                transparent 40%,
-				                rgba(0,170,255,0.00) 44%,
-				                rgba(0,170,255,0.80) 47%,
-				                rgba(230, 251, 255, 1.00) 50%,
-				                rgba(0,170,255,0.55) 53%,
-				                rgba(0,170,255,0.00) 57%,
-				                transparent 60%,
-				                transparent 100%
-				            );
-				            background-size: 320% 100%;
-				            background-position: -160% 50%;
-				            -webkit-background-clip: text;
-				            background-clip: text;
-				            filter: drop-shadow(0 0 16px rgba(0,170,255,0.40)) drop-shadow(0 0 54px rgba(0,170,255,0.18));
-				            opacity: 0.95;
-				            will-change: background-position, opacity, filter;
-				            animation: magxElectricPass 7.2s linear infinite;
-				        }
-				        @keyframes magxElectricPass{
-				            from { background-position: -160% 50%; }
-				            to { background-position: 160% 50%; }
-				        }
+			        /* A short electric spark travels letter by letter across the headline. */
+			        #title .hero-title .hero-letter{
+			            position:relative;
+			            display:inline-block;
+			            animation:heroLetterSpark 3.4s ease-in-out infinite;
+			            animation-delay:var(--letter-delay, calc(var(--letter-index) * 85ms));
+			            will-change:color, text-shadow, transform;
+			        }
+			        #title .hero-title .hero-letter-space{width:.32em}
+			        /* A tiny spark rides just above whichever letter the current is passing through. */
+			        #title .hero-title .hero-letter::after{
+			            content:"";
+			            position:absolute;
+			            left:50%;
+			            top:-0.16em;
+			            width:0.16em;
+			            height:0.16em;
+			            border-radius:50%;
+			            background:#f2fdff;
+			            box-shadow:0 0 6px #fff, 0 0 14px #6fe8ff, 0 0 26px #00c8ff, 0 0 44px rgba(0,140,255,.9);
+			            opacity:0;
+			            transform:translate(-50%, 0) scale(.4);
+			            pointer-events:none;
+			            animation:heroSparkDot 3.4s ease-in-out infinite;
+			            animation-delay:var(--letter-delay, calc(var(--letter-index) * 85ms));
+			        }
+			        @keyframes heroLetterSpark{
+			            0%, 9%, 100%{
+			                color:rgba(255,255,255,.98);
+			                text-shadow:0 18px 70px rgba(0,0,0,.55), 0 0 28px rgba(0,170,255,.12);
+			                transform:translateY(0) skewX(0deg);
+			            }
+			            2%{
+			                color:#ffffff;
+			                text-shadow:0 0 4px #fff, 0 0 12px #b8f6ff, 0 0 24px #00c8ff, 0 0 46px #008cff, 0 0 78px rgba(0,170,255,.95);
+			                transform:translateY(-1px) skewX(-7deg);
+			            }
+			            3.6%{
+			                color:#d9f9ff;
+			                text-shadow:0 0 3px #fff, 0 0 9px #74e5ff, 0 0 18px #00a8ff, 0 0 36px rgba(0,140,255,.8);
+			                transform:translateY(1px) skewX(5deg);
+			            }
+			            5.4%{
+			                color:#ffffff;
+			                text-shadow:0 0 5px #fff, 0 0 16px #8fefff, 0 0 32px #00c8ff, 0 0 60px rgba(0,170,255,.9);
+			                transform:translateY(0) skewX(0deg);
+			            }
+			            7%{
+			                color:#eafcff;
+			                text-shadow:0 0 4px #fff, 0 0 10px #5fdcff, 0 0 22px #008cff, 0 0 40px rgba(0,170,255,.6);
+			                transform:translateY(0) skewX(0deg);
+			            }
+			        }
+			        @keyframes heroSparkDot{
+			            0%, 9%, 100%{opacity:0; transform:translate(-50%, 0) scale(.4);}
+			            2%{opacity:1; transform:translate(-50%, -0.35em) scale(1.15);}
+			            5%{opacity:.75; transform:translate(-50%, -0.2em) scale(.85);}
+			            7%{opacity:0; transform:translate(-50%, 0) scale(.4);}
+			        }
 				        @media (prefers-reduced-motion: reduce){
-				            #title .hero-title::after{
-				                animation: none;
-				                opacity: 0.55;
-				            }
+			            #title .hero-title .hero-letter,
+			            #title .hero-title .hero-letter::after{animation:none}
+			            #title .hero-title .hero-letter::after{opacity:0}
 				        }
 
 			        #title hr{
@@ -7855,10 +7879,22 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 			        $(document).ready(function(){
 			            $('.year').text(new Date().getFullYear());
 
-			            // Ensure the neon title overlay always matches the visible title text.
+			            // Wrap each headline character so the electric spark can travel letter by letter.
 				            $(".hero-title").each(function(){
 				                const t = String($(this).text() || "").trim();
-				                if(t){ this.setAttribute("data-text", t); }
+			                if(!t){ return; }
+			                this.setAttribute("data-text", t);
+			                this.setAttribute("aria-label", t);
+			                this.textContent = "";
+			                Array.from(t).forEach((character, index) => {
+			                    const letter = document.createElement("span");
+			                    letter.className = "hero-letter" + (character === " " ? " hero-letter-space" : "");
+			                    letter.style.setProperty("--letter-index", index);
+			                    letter.style.setProperty("--letter-delay", (index * (2.4 / Math.max(t.length - 1, 1))).toFixed(3) + "s");
+			                    letter.setAttribute("aria-hidden", "true");
+			                    letter.textContent = character === " " ? String.fromCharCode(160) : character;
+			                    this.appendChild(letter);
+			                });
 				            });
 
 				            function enforceLockedAutoplay(videoEl){
