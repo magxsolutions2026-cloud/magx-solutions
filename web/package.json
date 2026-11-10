@@ -1,0 +1,37 @@
+{
+  "name": "magx-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "build:avatar": "node scripts/build-avatar.mjs"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "gsap": "^3.15.1",
+    "lenis": "^1.3.27",
+    "maath": "^0.10.8",
+    "motion": "^12.43.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.180.0",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "tailwindcss": "^4.3.5",
+    "typescript": "~5.8",
+    "vite": "^7.3.8"
+  }
+}

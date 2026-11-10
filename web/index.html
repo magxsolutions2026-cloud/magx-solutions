@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07080a" />
+    <title>MAGX Solutions — Software & 3D Web Development</title>
+    <meta
+      name="description"
+      content="MAGX Solutions builds fast, custom web apps and business systems. Book a free consultation."
+    />
+    <link rel="icon" type="image/jpeg" href="/withbacklogo.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
+    />
+    <!--
+      Pre-loader: lives in static HTML so it paints before any JavaScript arrives.
+      src/hooks/usePreloader.ts drives its progress and removes it once the 3D scene is ready.
+    -->
+    <style>
+      #preloader {
+        position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+        background: #07080a; color: #f2f1ec;
+        font: 500 12px/1.4 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase;
+        transition: opacity .7s cubic-bezier(.7,0,.3,1), visibility .7s;
+      }
+      #preloader.is-done { opacity: 0; visibility: hidden; }
+      #preloader .pl-stack { display: grid; justify-items: center; gap: 28px; }
+      #preloader svg { width: 96px; height: 96px; overflow: visible; }
+      #preloader .pl-cube { fill: none; stroke: #f2f1ec; stroke-width: 1.2; stroke-linejoin: round;
+        stroke-dasharray: 260; stroke-dashoffset: 260; animation: pl-draw 2.4s cubic-bezier(.65,0,.35,1) infinite; }
+      #preloader .pl-core { fill: #4cc2ff; transform-origin: 50px 50px; animation: pl-pulse 1.2s ease-in-out infinite; }
+      #preloader .pl-orbit { fill: none; stroke: #4cc2ff; stroke-width: 1; stroke-dasharray: 2 6; transform-origin: 50px 50px; animation: pl-spin 6s linear infinite; }
+      #preloader .pl-bar { width: min(240px, 60vw); height: 1px; background: rgba(242,241,236,.14); overflow: hidden; }
+      #preloader .pl-bar i { display: block; height: 100%; width: 100%; background: #4cc2ff; transform: scaleX(var(--p, .04)); transform-origin: left; transition: transform .4s ease-out; }
+      #preloader .pl-meta { display: flex; justify-content: space-between; width: min(240px, 60vw); color: rgba(242,241,236,.55); }
+      @keyframes pl-draw { 50% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -260; } }
+      @keyframes pl-pulse { 50% { transform: scale(.55); opacity: .5; } }
+      @keyframes pl-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        #preloader .pl-cube, #preloader .pl-core, #preloader .pl-orbit { animation: none; stroke-dashoffset: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="preloader" role="status" aria-live="polite">
+      <div class="pl-stack">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="pl-orbit" cx="50" cy="50" r="46" />
+          <path class="pl-cube" d="M50 14 L82 32 L82 68 L50 86 L18 68 L18 32 Z M18 32 L50 50 L82 32 M50 50 L50 86" />
+          <circle class="pl-core" cx="50" cy="50" r="4" />
+        </svg>
+        <span>Initializing 3D Workspace…</span>
+        <div class="pl-bar"><i></i></div>
+        <div class="pl-meta"><span data-pl-label>Loading assets</span><span data-pl-pct>0%</span></div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
