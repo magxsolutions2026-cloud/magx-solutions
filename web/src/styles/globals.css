@@ -15,6 +15,14 @@
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-rise: rise 0.7s var(--ease-out-expo) both;
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+  }
 }
 
 @layer base {

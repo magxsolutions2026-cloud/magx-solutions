@@ -84,6 +84,11 @@ export const credentials = [
     body: 'Recognised for delivering a practical, scalable business system for TMC Multi-Industry.',
   },
   {
+    kicker: 'Recognition, 2026',
+    title: 'Outstanding DRRM Innovator',
+    body: 'Plaque of Recognition from the City of Ilagan CDRRMO for creative disaster-risk-reduction solutions and community preparedness.',
+  },
+  {
     kicker: 'Certification',
     title: 'National Certificate II — Computer Systems Servicing',
     body: 'Validated competencies in systems servicing and technical support (2025).',
@@ -106,4 +111,58 @@ export const techStack: { group: string; items: string[] }[] = [
   { group: 'Motion & 3D', items: ['Three.js', 'React Three Fiber', 'GSAP'] },
   { group: 'Backend & data', items: ['PHP', 'MySQL', 'PostgreSQL / Supabase', 'REST APIs', 'SMTP / PHPMailer'] },
   { group: 'Delivery', items: ['Git', 'Vercel', 'Role-based auth', 'Graphic design'] },
+]
+
+export type Project = {
+  title: string
+  category: string
+  year: string
+  summary: string
+  problem?: string
+  solution?: string
+  results: string[]
+  tags: string[]
+  /** Root-absolute image URL. */
+  cover: string
+  /** `contain` letterboxes small/odd-ratio images on the card instead of cropping them. */
+  fit?: 'cover' | 'contain'
+  link?: string
+}
+
+/** Case studies from the legacy homepage. Used when the admin panel has no portfolio items. */
+export const fallbackProjects: Project[] = [
+  {
+    title: 'TMC Integrated Record Management System',
+    category: 'Flagship build',
+    year: '2025',
+    summary: 'One secure, searchable platform for a multi-industry business: gasoline stations, leasing and food services.',
+    problem: 'Fragmented manual records caused reporting delays, low visibility and inconsistent data.',
+    solution: 'A centralized role-based platform with structured forms, validation and monitoring dashboards.',
+    results: ['Live across three gasoline station branches', 'Supports commercial leasing and fast-food operations', 'Certificate of Implementation, 2025'],
+    tags: ['PHP', 'MySQL', 'Role-based auth', 'Reporting'],
+    cover: `${import.meta.env.BASE_URL}work/tmc.webp`,
+  },
+  {
+    title: 'MAGX conversion-focused website',
+    category: 'Growth build',
+    year: '2026',
+    summary: 'A rebuild of the MAGX site to earn trust faster and turn more visitors into enquiries.',
+    problem: 'The earlier site lacked hierarchy and persuasive structure, limiting confidence from new prospects.',
+    solution: 'Premium visual language, strategic section order, stronger copy hierarchy and micro-interactions.',
+    results: ['Clear project storytelling and hierarchy', 'Engagement modules for comments and sharing', 'More credible client-facing presentation'],
+    tags: ['UX', 'Interaction design', 'Front-end'],
+    cover: `${import.meta.env.BASE_URL}work/magx-site.webp`,
+  },
+  {
+    title: 'Firstgate campaign asset system',
+    category: 'Design build',
+    year: '2025',
+    summary: 'A reusable brand system that standardized campaign visuals across social and print.',
+    problem: 'Inconsistent assets across channels lowered campaign quality and slowed production.',
+    solution: 'Modular social and print templates with brand-safe composition rules.',
+    results: ['Multi-format materials for active campaigns', 'Consistent branding across social and print', 'Faster turnaround on promotions'],
+    tags: ['Brand system', 'Templates', 'Graphic design'],
+    cover: `${import.meta.env.BASE_URL}work/firstgate.webp`,
+    fit: 'contain',
+  },
 ]

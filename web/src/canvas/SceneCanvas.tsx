@@ -8,6 +8,8 @@ import { usePortrait, useReducedMotion } from '../hooks/useViewport'
 import { CameraRig } from './CameraRig'
 import { ParticleField } from './particles/ParticleField'
 import { Workspace } from './workspace/Workspace'
+import { WorkDeck } from './work/WorkDeck'
+import type { Project } from '../content/site'
 
 /** Mounted inside the Suspense boundary, so its effect runs only after every asset resolved. */
 function SceneReady() {
@@ -44,7 +46,7 @@ function Lights() {
  * The single, persistent WebGL canvas fixed behind the HTML layer.
  * Loaded lazily from App so three.js stays out of the first-paint bundle.
  */
-export default function SceneCanvas() {
+export default function SceneCanvas({ projects }: { projects: Project[] }) {
   usePreloader()
   const active = useCanvasVisibility()
   const portrait = usePortrait()
@@ -54,6 +56,10 @@ export default function SceneCanvas() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true" data-frameloop={active ? 'always' : 'never'}>
       <Canvas
+        // The canvas sits behind the page (pointer-events: none); feed it pointer events
+        // from the document root so the work deck can still react to hover and clicks.
+        eventSource={document.getElementById('root')!}
+        eventPrefix="client"
         frameloop={active ? 'always' : 'never'}
         shadows
         dpr={[1, portrait ? 2 : 1.75]}
@@ -69,6 +75,10 @@ export default function SceneCanvas() {
         <Suspense fallback={null}>
           <Workspace />
           <SceneReady />
+        </Suspense>
+        {/* Separate boundary: project covers stream in after the pre-loader, never blocking it. */}
+        <Suspense fallback={null}>
+          <WorkDeck projects={projects} />
         </Suspense>
       </Canvas>
     </div>

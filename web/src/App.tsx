@@ -11,6 +11,7 @@ import { Navbar } from './sections/Navbar'
 import { Hero } from './sections/Hero'
 import { Services } from './sections/Services'
 import { Proof } from './sections/Proof'
+import { Work } from './sections/Work'
 import { TechStack } from './sections/TechStack'
 import { Footer } from './sections/Footer'
 
@@ -20,7 +21,7 @@ const SceneCanvas = lazy(() => import('./canvas/SceneCanvas'))
 export default function App() {
   useEffect(() => initSmoothScroll(), [])
   useActiveSection()
-  const { services, loaded } = usePublicContent()
+  const { services, projects, loaded } = usePublicContent()
   useReveal([loaded])
   const openBooking = useUiStore((s) => s.openBooking)
 
@@ -28,7 +29,7 @@ export default function App() {
     <>
       <SceneErrorBoundary>
         <Suspense fallback={null}>
-          <SceneCanvas />
+          <SceneCanvas projects={projects} />
         </Suspense>
       </SceneErrorBoundary>
 
@@ -44,8 +45,9 @@ export default function App() {
         <Section id="services">
           <Services services={services} />
         </Section>
-        {/* Phase 4: interactive 3D project deck */}
-        <Section id="work" eyebrow="02 — Selected work" title="Work" className="min-h-dvh" />
+        <Section id="work" padded={false}>
+          <Work projects={projects} />
+        </Section>
         <Section id="testimonials" scene="off">
           <Proof />
         </Section>

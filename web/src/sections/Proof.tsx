@@ -34,8 +34,8 @@ export function Proof() {
       )}
 
       <ul className="mt-16 grid gap-px overflow-hidden rounded-3xl border border-line bg-line md:grid-cols-2">
-        {credentials.map((c) => (
-          <li key={c.title} data-reveal className="bg-ink p-8 md:p-10">
+        {credentials.map((c, i) => (
+          <li key={c.title} data-reveal className={`bg-ink p-8 md:p-10 ${i === 0 ? 'md:col-span-2' : ''}`}>
             <p className="font-mono text-xs uppercase tracking-[0.16em] text-volt">{c.kicker}</p>
             <h3 className="mt-4 font-display text-2xl font-bold leading-tight tracking-tight [font-stretch:110%] md:text-3xl">{c.title}</h3>
             <p className="mt-3 leading-relaxed text-muted">{c.body}</p>

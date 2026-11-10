@@ -37,4 +37,10 @@ export function scrollToId(id: string) {
   else el.scrollIntoView({ behavior: 'smooth' })
 }
 
+/** Smooth-scrolls to an absolute page offset (px). */
+export function scrollToY(y: number) {
+  if (lenis) lenis.scrollTo(y, { duration: 1.2 })
+  else window.scrollTo({ top: y, behavior: 'smooth' })
+}
+
 export { gsap, ScrollTrigger, useGSAP }
