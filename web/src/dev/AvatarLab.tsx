@@ -1,6 +1,7 @@
 import { Suspense, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Canvas } from '@react-three/fiber'
+import * as THREE from 'three'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { Avatar } from '../canvas/workspace/Avatar'
 import { useSceneStore, type AvatarState } from '../store/sceneStore'
@@ -13,6 +14,21 @@ import { useSceneStore, type AvatarState } from '../store/sceneStore'
 const params = new URLSearchParams(location.search)
 const mode = params.get('mode') === 'desk' ? 'desk' : 'stand'
 const clip = params.get('clip') as AvatarState | null
+
+/** Records fingertip world positions to window.__hands for measuring (?probe). */
+function HandProbe() {
+  const v = new THREE.Vector3()
+  useFrame(({ scene }) => {
+    const out: Record<string, number[]> = {}
+    for (const name of ['LeftHandIndex3', 'RightHandIndex3', 'LeftHandMiddle3', 'RightHandMiddle3', 'LeftHand', 'RightHand']) {
+      const bone = scene.getObjectByName(name)
+      if (bone) out[name] = bone.getWorldPosition(v).toArray().map((n) => Math.round(n * 1000) / 1000)
+    }
+    const w = window as unknown as { __hands?: Record<string, number[]>[] }
+    ;(w.__hands ??= []).push(out)
+  })
+  return null
+}
 
 function Trigger() {
   useEffect(() => {
@@ -30,6 +46,7 @@ createRoot(document.getElementById('root')!).render(
     <Suspense fallback={null}>
       <Avatar mode={mode} />
       <Trigger />
+      {params.has('probe') && <HandProbe />}
     </Suspense>
     <OrbitControls target={[0, 0.95, 0]} />
   </Canvas>,

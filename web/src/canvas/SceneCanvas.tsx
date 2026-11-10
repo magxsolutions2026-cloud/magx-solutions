@@ -35,7 +35,7 @@ function Lights() {
       {/* Cool rim light from behind for silhouette separation against the dark */}
       <directionalLight position={[-3, 2.5, -4]} intensity={1.1} color="#4cc2ff" />
       {/* Screen bounce onto the avatar's face */}
-      <pointLight position={[0, 0.9, 0.36]} intensity={0.25} distance={0.9} decay={2} color="#4cc2ff" />
+      <pointLight position={[0, 0.92, 0.6]} intensity={0.25} distance={0.9} decay={2} color="#4cc2ff" />
     </>
   )
 }

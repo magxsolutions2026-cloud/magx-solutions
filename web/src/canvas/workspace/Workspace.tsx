@@ -6,12 +6,15 @@ import { Avatar } from './Avatar'
 
 /*
  * Procedural workspace: no model download, and it matches the site's palette.
- * Dimensions are tuned to the avatar's seated typing clip (hips at ~0.55 m):
- * seat top 0.47 m, desk top 0.74 m, keyboard ~0.38 m in front of the hips.
+ * Dimensions are measured from the avatar's seated typing clip (avatar-lab ?probe):
+ * hips at ~0.55 m, wrists ~0.48 m out, fingertips ~0.58–0.65 m out at ~0.78 m high.
+ * So: seat top 0.47 m, desk top 0.74 m, laptop keyboard spanning ~0.45–0.68 m out.
  */
 const DESK_Y = 0.74
 const DESK_Z = 0.42
 const SEAT_Y = 0.47
+/** Laptop base: front edge under the wrists, keys under the fingertips. */
+const LAPTOP = { z: 0.565, w: 0.37, d: 0.24 }
 
 const metal = new THREE.MeshStandardMaterial({ color: '#1b1e24', metalness: 0.8, roughness: 0.35 })
 const deskTop = new THREE.MeshStandardMaterial({ color: '#0c0d10', metalness: 0.1, roughness: 0.7 })
@@ -43,22 +46,48 @@ function Laptop() {
   // The avatar faces +z, so the hinge sits on the laptop's +z edge and the lid
   // leans back toward +z (positive x-rotation tips +y toward +z).
   const LID_TILT = 0.32
+  const { w, d } = LAPTOP
   return (
-    <group position={[0, DESK_Y + 0.018, DESK_Z - 0.08]}>
-      <RoundedBox args={[0.34, 0.012, 0.23]} radius={0.005} position={[0, 0.006, 0]} material={aluminium} castShadow />
-      <group position={[0, 0.012, 0.115]} rotation={[LID_TILT, 0, 0]}>
-        <RoundedBox args={[0.34, 0.23, 0.008]} radius={0.004} position={[0, 0.115, 0]} material={aluminium} castShadow />
+    <group position={[0, DESK_Y + 0.018, LAPTOP.z]}>
+      <RoundedBox args={[w, 0.012, d]} radius={0.005} position={[0, 0.006, 0]} material={aluminium} castShadow />
+      {/* Keyboard deck (hinge side) and trackpad (wrist side) */}
+      <mesh position={[0, 0.0125, d * 0.14]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[w * 0.88, d * 0.5]} />
+        <meshStandardMaterial color="#0e1013" roughness={0.6} />
+      </mesh>
+      <mesh position={[0, 0.0125, -d * 0.3]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[w * 0.32, d * 0.26]} />
+        <meshStandardMaterial color="#a4a9b2" metalness={0.6} roughness={0.35} />
+      </mesh>
+      <group position={[0, 0.012, d / 2]} rotation={[LID_TILT, 0, 0]}>
+        <RoundedBox args={[w, d, 0.008]} radius={0.004} position={[0, d / 2, 0]} material={aluminium} castShadow />
         {/* Screen faces the avatar (-z) */}
-        <mesh position={[0, 0.115, -0.0045]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[0.31, 0.2]} />
+        <mesh position={[0, d / 2, -0.0045]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[w * 0.91, d * 0.86]} />
           <meshStandardMaterial color="#0a1a2a" emissive="#4cc2ff" emissiveIntensity={0.6} toneMapped={false} />
         </mesh>
         {/* Logo glow on the back of the lid faces the camera (+z) */}
-        <mesh position={[0, 0.125, 0.0045]}>
+        <mesh position={[0, d / 2 + 0.01, 0.0045]}>
           <circleGeometry args={[0.025, 32]} />
           <meshStandardMaterial ref={glow} color="#4cc2ff" emissive="#4cc2ff" toneMapped={false} />
         </mesh>
       </group>
+    </group>
+  )
+}
+
+/** The typing clip's right hand periodically reaches out to the side; give it a mouse there. */
+function Mouse() {
+  return (
+    <group position={[-0.3, DESK_Y + 0.018, 0.63]}>
+      <mesh position={[0, 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[0.18, 0.17]} />
+        <meshStandardMaterial color="#15171c" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, 0.014, 0]} scale={[0.032, 0.016, 0.055]} castShadow>
+        <sphereGeometry args={[1, 24, 16]} />
+        <meshStandardMaterial color="#d7dbe1" metalness={0.2} roughness={0.4} />
+      </mesh>
     </group>
   )
 }
@@ -90,6 +119,7 @@ export function Workspace(props: ThreeElements['group']) {
       <Desk />
       <Chair />
       <Laptop />
+      <Mouse />
       <Avatar mode="desk" />
       {/* Soft floor disc so the setup doesn't float in the particle void */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0.15]} receiveShadow>
