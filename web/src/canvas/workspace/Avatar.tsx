@@ -89,7 +89,6 @@ export function Avatar({ mode = 'stand', ...props }: Props) {
     return () => {
       mixer.stopAllAction()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions, baseClip])
 
   // Gesture requests from the UI. Ignore a repeat of what's already playing so
@@ -100,7 +99,6 @@ export function Avatar({ mode = 'stand', ...props }: Props) {
     // Standing gestures don't blend well from a seated pose; desk mode only reacts by looking.
     if (mode === 'desk' && next !== 'look' && next !== baseClip) return
     play(next)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requested, baseClip, mode])
 
   // One-shot finished -> back to the base loop.
@@ -113,7 +111,6 @@ export function Avatar({ mode = 'stand', ...props }: Props) {
     }
     mixer.addEventListener('finished', onFinished)
     return () => mixer.removeEventListener('finished', onFinished)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mixer, actions, baseClip, setAvatarState])
 
   // Occasional idle "look around" so the avatar never feels frozen.

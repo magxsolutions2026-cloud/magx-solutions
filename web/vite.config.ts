@@ -18,11 +18,18 @@ export default defineConfig(({ mode }) => {
       target: 'es2022',
       rollupOptions: {
         output: {
-          // Keep the heavy 3D stack out of the critical HTML/UI chunk.
-          manualChunks: {
-            three: ['three'],
-            r3f: ['@react-three/fiber', '@react-three/drei'],
-            motion: ['gsap', '@gsap/react', 'motion', 'lenis'],
+          // Keep the heavy 3D stack out of the critical HTML/UI chunk. Match by path, not
+          // by entry package: listing packages pulls their shared deps (e.g. zustand) into
+          // the 3D chunk, which the main bundle would then have to preload.
+          manualChunks(id) {
+            // Vite's dynamic-import helper is used by drei too; keep it out of r3f.
+            if (id.includes('vite/preload-helper') || id.includes('vite/modulepreload-polyfill')) return 'vendor'
+            if (!id.includes('node_modules')) return
+            // Shared by the UI and R3F; pin them to their own chunk or Rollup parks them in r3f.
+            if (/node_modules\/(react|react-dom|scheduler|zustand|use-sync-external-store)\//.test(id)) return 'vendor'
+            if (/node_modules\/three\//.test(id)) return 'three'
+            if (/node_modules\/(@react-three|three-stdlib|camera-controls|maath|troika|@monogrid|meshline|stats)/.test(id)) return 'r3f'
+            if (/node_modules\/(gsap|@gsap|lenis)\//.test(id)) return 'motion'
           },
         },
       },
