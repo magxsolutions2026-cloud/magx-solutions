@@ -18,9 +18,9 @@ const clip = params.get('clip') as AvatarState | null
 /** Records fingertip world positions to window.__hands for measuring (?probe). */
 function HandProbe() {
   const v = new THREE.Vector3()
-  useFrame(({ scene }) => {
-    const out: Record<string, number[]> = {}
-    for (const name of ['LeftHandIndex3', 'RightHandIndex3', 'LeftHandMiddle3', 'RightHandMiddle3', 'LeftHand', 'RightHand']) {
+  useFrame(({ scene, clock }) => {
+    const out: Record<string, number[]> = { t: [Math.round(clock.elapsedTime * 100) / 100] }
+    for (const name of ['LeftHandIndex3', 'RightHandIndex3', 'LeftHandMiddle3', 'RightHandMiddle3', 'LeftHand', 'RightHand', 'Head']) {
       const bone = scene.getObjectByName(name)
       if (bone) out[name] = bone.getWorldPosition(v).toArray().map((n) => Math.round(n * 1000) / 1000)
     }

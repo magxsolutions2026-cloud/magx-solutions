@@ -2,6 +2,8 @@ import { useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame, type ThreeElements } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
+import { easing } from 'maath'
+import { useSceneStore } from '../../store/sceneStore'
 import { Avatar } from './Avatar'
 
 /*
@@ -112,7 +114,36 @@ function Chair() {
   )
 }
 
-/** Desk, chair, laptop and the avatar typing. Lives at the world origin. */
+/** Where the avatar is while seated (chair) and while standing to greet visitors at Contact. */
+type Spot = { position: [number, number, number]; yaw: number }
+const SEATED: Spot = { position: [0, 0, 0], yaw: 0 }
+/** Beside the desk's left end, turned a little toward the contact form (screen right). */
+const STANDING: Spot = { position: [-1.05, 0, 0.55], yaw: 0.18 }
+
+/**
+ * Seats the avatar at the desk, and stands it up beside the desk while the Contact
+ * section is active. The body glides between spots while Avatar cross-fades
+ * typing -> idle, which reads as getting up to say hello.
+ */
+function AvatarRig() {
+  const ref = useRef<THREE.Group>(null)
+  const standing = useSceneStore((s) => s.activeSection === 'contact')
+  useFrame((_, rawDelta) => {
+    const g = ref.current
+    if (!g) return
+    const delta = Math.min(rawDelta, 0.1)
+    const spot = standing ? STANDING : SEATED
+    easing.damp3(g.position, spot.position, 0.45, delta)
+    easing.dampAngle(g.rotation, 'y', spot.yaw, 0.45, delta)
+  })
+  return (
+    <group ref={ref}>
+      <Avatar mode={standing ? 'stand' : 'desk'} />
+    </group>
+  )
+}
+
+/** Desk, chair, laptop and the avatar. Lives at the world origin. */
 export function Workspace(props: ThreeElements['group']) {
   return (
     <group {...props}>
@@ -120,7 +151,7 @@ export function Workspace(props: ThreeElements['group']) {
       <Chair />
       <Laptop />
       <Mouse />
-      <Avatar mode="desk" />
+      <AvatarRig />
       {/* Soft floor disc so the setup doesn't float in the particle void */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0.15]} receiveShadow>
         <circleGeometry args={[1.25, 64]} />

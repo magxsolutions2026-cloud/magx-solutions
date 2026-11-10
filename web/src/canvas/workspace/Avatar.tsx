@@ -26,6 +26,8 @@ function loadClips() {
 /** One-shot gestures; everything else loops. */
 const ONE_SHOT = new Set<ClipName>(['look', 'wave', 'point'])
 const FADE = 0.35
+/** Longer blend when switching between sitting and standing, paired with the body gliding to its new spot. */
+const MODE_FADE = 0.9
 /** Idle "look around" fires at a random interval in this range (seconds). */
 const LOOK_EVERY: [number, number] = [9, 16]
 
@@ -67,7 +69,7 @@ export function Avatar({ mode = 'stand', ...props }: Props) {
   }, [scene])
 
   /** Cross-fades from the current clip to `next`. */
-  const play = (next: ClipName) => {
+  const play = (next: ClipName, fade = FADE) => {
     const to = actions[next]
     if (!to) return
     const from = actions[current.current]
@@ -79,16 +81,19 @@ export function Avatar({ mode = 'stand', ...props }: Props) {
       to.setLoop(THREE.LoopRepeat, Infinity)
     }
     to.play()
-    if (from && from !== to) to.crossFadeFrom(from, FADE, true)
+    if (from && from !== to) to.crossFadeFrom(from, fade, true)
     current.current = next
   }
 
-  // Start the base loop.
+  useEffect(() => () => void mixer.stopAllAction(), [mixer])
+
+  // Base loop: starts immediately on mount, then blends slowly on sit <-> stand switches.
+  // Any gesture requested under the previous mode is dropped.
+  const started = useRef(false)
   useEffect(() => {
-    play(baseClip)
-    return () => {
-      mixer.stopAllAction()
-    }
+    play(baseClip, started.current ? MODE_FADE : 0)
+    started.current = true
+    setAvatarState('idle')
   }, [actions, baseClip])
 
   // Gesture requests from the UI. Ignore a repeat of what's already playing so
@@ -96,8 +101,8 @@ export function Avatar({ mode = 'stand', ...props }: Props) {
   useEffect(() => {
     const next: ClipName = requested === 'idle' ? baseClip : (requested as Exclude<AvatarState, 'idle'>)
     if (next === current.current) return
-    // Standing gestures don't blend well from a seated pose; desk mode only reacts by looking.
-    if (mode === 'desk' && next !== 'look' && next !== baseClip) return
+    // Every gesture clip is a standing pose; seated, the avatar just keeps typing.
+    if (mode === 'desk' && next !== baseClip) return
     play(next)
   }, [requested, baseClip, mode])
 

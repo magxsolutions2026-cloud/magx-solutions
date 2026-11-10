@@ -3,7 +3,6 @@ import { initSmoothScroll } from './lib/gsap'
 import { useActiveSection } from './hooks/useActiveSection'
 import { usePublicContent } from './hooks/usePublicContent'
 import { useReveal } from './hooks/useReveal'
-import { useUiStore } from './store/uiStore'
 import { SceneErrorBoundary } from './components/SceneErrorBoundary'
 import { Section } from './components/Section'
 import { BookingDialog } from './components/BookingDialog'
@@ -12,6 +11,7 @@ import { Hero } from './sections/Hero'
 import { Services } from './sections/Services'
 import { Proof } from './sections/Proof'
 import { Work } from './sections/Work'
+import { Contact } from './sections/Contact'
 import { TechStack } from './sections/TechStack'
 import { Footer } from './sections/Footer'
 
@@ -23,7 +23,6 @@ export default function App() {
   useActiveSection()
   const { services, projects, loaded } = usePublicContent()
   useReveal([loaded])
-  const openBooking = useUiStore((s) => s.openBooking)
 
   return (
     <>
@@ -54,15 +53,8 @@ export default function App() {
         <Section id="stack" scene="off">
           <TechStack />
         </Section>
-        {/* Phase 5: glass contact form beside the avatar */}
-        <Section id="contact" eyebrow="05 — Contact" title="Let's work together" className="min-h-dvh">
-          <button
-            type="button"
-            onClick={() => openBooking()}
-            className="mt-10 rounded-full bg-volt px-7 py-4 font-semibold text-ink"
-          >
-            Book a consultation
-          </button>
+        <Section id="contact" padded={false} className="pb-24">
+          <Contact />
         </Section>
       </main>
       <Footer />
