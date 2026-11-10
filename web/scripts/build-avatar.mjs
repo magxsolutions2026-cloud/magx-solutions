@@ -21,27 +21,21 @@ const srcDir = path.join(root, 'assets-src/avatar')
 const outDir = path.join(root, 'public/models/avatar')
 
 /**
- * Gesture clips whose legs should be replaced by the standing idle stance. Mixamo's
- * "Pointing" is performed in a crouch; we keep its arm/torso/head and stand it up.
+ * Clips whose forward travel (hips Z) is extracted as root motion: the hips track is
+ * pinned to its first-frame Z and the travel is exported separately, so Avatar.tsx
+ * can move the whole body (and keep it there when the clip ends) instead of the
+ * pose snapping back when the next clip blends in.
  */
-const UPPER_BODY_ONLY = new Set(['point'])
-const LOWER_BODY = new Set(['Hips', 'LeftUpLeg', 'LeftLeg', 'LeftFoot', 'LeftToeBase', 'RightUpLeg', 'RightLeg', 'RightFoot', 'RightToeBase'])
-
-/**
- * Seconds of a source clip to keep. Mixamo's "Pointing" starts and ends with the arms in
- * its crouch (hands on knees), which reads as a stiff bow once the legs are stood up;
- * the arm is raised from ~0.5 s to ~2.2 s. The avatar's cross-fades cover the edges.
- */
-const CLIP_WINDOWS = { point: [0.35, 2.45] }
+const ROOT_MOTION = new Set(['standUp'])
 
 /** Clip file -> state name used by canvas/workspace/Avatar.tsx. */
 const CLIPS = {
-  // idle first: its stance is reused by UPPER_BODY_ONLY clips
-  'breathing-idle.fbx': 'idle',
   'typing.fbx': 'typing',
+  'breathing-idle.fbx': 'idle',
   'looking-around.fbx': 'look',
   'waving.fbx': 'wave',
   'pointing.fbx': 'point',
+  'stand-up.fbx': 'standUp',
 }
 
 /** Reads bone names and the hips rest height from the avatar GLB's JSON chunk. */
@@ -82,9 +76,6 @@ function decimate(track, tol) {
 
 const round = (n) => Math.round(n * 1e4) / 1e4
 
-/** Idle's lower-body stance, captured while converting idle (see UPPER_BODY_ONLY). */
-let standPose = null
-
 async function convertClip(file, name, rig) {
   const buf = await readFile(file)
   const group = new FBXLoader().parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '')
@@ -124,38 +115,28 @@ async function convertClip(file, name, rig) {
     }
   }
 
-  // Optionally keep only the useful window of a clip (see CLIP_WINDOWS).
-  let duration = clip.duration
-  let finalTracks = tracks
-  const win = CLIP_WINDOWS[name]
-  if (win) {
-    const [start, end] = win
-    finalTracks = finalTracks.map((t) => t.clone().trim(start, end).shift(-start))
-    duration = end - start
+  const duration = clip.duration
+  let rootMotion = null
+  if (ROOT_MOTION.has(name)) {
+    const hips = tracks.find((t) => t.name === 'Hips.position')
+    const v = hips.values
+    const z0 = v[2]
+    rootMotion = { times: Array.from(hips.times, round), z: [] }
+    for (let i = 0; i < v.length; i += 3) {
+      rootMotion.z.push(round(v[i + 2] - z0))
+      v[i + 2] = z0
+    }
   }
-
-  if (name === 'idle') {
-    // Remember the idle's first-frame hips + legs pose for UPPER_BODY_ONLY clips.
-    standPose = tracks
-      .filter((t) => LOWER_BODY.has(t.name.split('.')[0]))
-      .map((t) => ({ name: t.name, Ctor: t.constructor, value: Array.from(t.values.slice(0, t.values.length / t.times.length)) }))
-  }
-  if (UPPER_BODY_ONLY.has(name)) {
-    if (!standPose) throw new Error(`${name}: idle clip must be converted first`)
-    const isLower = (t) => LOWER_BODY.has(t.name.split('.')[0])
-    const stance = standPose.map(({ name: n, Ctor, value }) => new Ctor(n, [0, duration], [...value, ...value]))
-    finalTracks = [...finalTracks.filter((t) => !isLower(t)), ...stance]
-  }
-
-  const out = new THREE.AnimationClip(name, duration, finalTracks)
+  const out = new THREE.AnimationClip(name, duration, tracks)
   const json = THREE.AnimationClip.toJSON(out)
   for (const t of json.tracks) {
     t.times = t.times.map(round)
     t.values = t.values.map(round)
   }
   const keys = json.tracks.reduce((s, t) => s + t.times.length, 0)
-  console.log(`  ${name.padEnd(7)} ${duration.toFixed(2)}s  ${json.tracks.length} tracks  ${keys} keys  hipsScale=${hipsScale.toFixed(4)}`)
-  return json
+  const travel = rootMotion ? `  root travel ${rootMotion.z.at(-1).toFixed(3)}m` : ''
+  console.log(`  ${name.padEnd(7)} ${duration.toFixed(2)}s  ${json.tracks.length} tracks  ${keys} keys  hipsScale=${hipsScale.toFixed(4)}${travel}`)
+  return { json, rootMotion }
 }
 
 async function main() {
@@ -166,15 +147,18 @@ async function main() {
 
   const present = new Set(await readdir(srcDir))
   const clips = []
+  const rootMotion = {}
   for (const [file, name] of Object.entries(CLIPS)) {
     if (!present.has(file)) {
       console.warn(`  (skipping missing ${file})`)
       continue
     }
-    clips.push(await convertClip(path.join(srcDir, file), name, rig))
+    const { json, rootMotion: rm } = await convertClip(path.join(srcDir, file), name, rig)
+    clips.push(json)
+    if (rm) rootMotion[name] = rm
   }
   const animsOut = path.join(outDir, 'anims.json')
-  await writeFile(animsOut, JSON.stringify({ clips }))
+  await writeFile(animsOut, JSON.stringify({ clips, rootMotion }))
   console.log(`wrote ${path.relative(root, animsOut)}`)
 
   // Mesh: WebP textures capped at 1024px + meshopt geometry compression. No simplification:

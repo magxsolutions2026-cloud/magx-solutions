@@ -24,8 +24,9 @@ export const shots: Record<SectionId, Shot> = {
   work: { position: [0, 3.3, 1.6], target: [0, 2.6, -6], frameX: 0.2 },
   testimonials: { position: [0, 4.5, 9], target: [0, 1.2, -4] },
   stack: { position: [3.5, 2.6, 7], target: [0, 1, -2] },
-  // Framed on the standing avatar (Workspace STANDING), shifted left so the form owns the right.
-  contact: { position: [-1.6, 1.4, 3.8], target: [-1.05, 1.0, 0.55], frameX: -0.24 },
+  // In front of the standing avatar (who stepped out from the swivelled chair, facing -x),
+  // desk behind him; shifted left so the form owns the right of the screen.
+  contact: { position: [-3.4, 1.45, 1.2], target: [-0.4, 1.0, -0.25], frameX: -0.24 },
 }
 
 /**
@@ -36,7 +37,7 @@ export const mobileShots: Partial<Record<SectionId, Shot>> = {
   // Look above the avatar so it sits in the lower half, under the stacked headline.
   hero: { position: [1.3, 2.6, 5.6], target: [0, 2.55, 0] },
   // Avatar in the upper half; the form scrolls up over the lower half.
-  contact: { position: [-1.4, 1.3, 4.4], target: [-1.05, 0.55, 0.55] },
+  contact: { position: [-3.8, 1.3, 1.0], target: [-0.4, 0.55, -0.25] },
   // Deck in the upper half; the case-study panel stacks below it.
   work: { position: [0, 3.4, 3.4], target: [0, 1.25, -6] },
 }

@@ -116,29 +116,38 @@ function Chair() {
 
 /** Where the avatar is while seated (chair) and while standing to greet visitors at Contact. */
 type Spot = { position: [number, number, number]; yaw: number }
-const SEATED: Spot = { position: [0, 0, 0], yaw: 0 }
-/** Beside the desk's left end, turned a little toward the contact form (screen right). */
-const STANDING: Spot = { position: [-1.05, 0, 0.55], yaw: 0.18 }
+/** Chair tucked in at the desk, avatar facing the laptop (+z). */
+const AT_DESK: Spot = { position: [0, 0, 0], yaw: 0 }
+/**
+ * Chair rolled back and swivelled away from the desk, toward the camera side (-x).
+ * The stand-up's ~0.4 m forward step then lands the avatar clear of the desk at
+ * about (-0.39, 0, -0.25), where the contact camera frames it.
+ */
+const SWIVELLED: Spot = { position: [0, 0, -0.36], yaw: -1.3 }
 
 /**
- * Seats the avatar at the desk, and stands it up beside the desk while the Contact
- * section is active. The body glides between spots while Avatar cross-fades
- * typing -> idle, which reads as getting up to say hello.
+ * The chair and the avatar move together: at the desk while seated, swivelled out
+ * while the Contact section is active. Avatar (mode="stand") waits for the swivel,
+ * stands up, and on leaving sits back down; the chair only turns back to the desk
+ * once the avatar reports it is seated again.
  */
 function AvatarRig() {
   const ref = useRef<THREE.Group>(null)
-  const standing = useSceneStore((s) => s.activeSection === 'contact')
+  const atContact = useSceneStore((s) => s.activeSection === 'contact')
+  const pose = useSceneStore((s) => s.avatarPose)
+  const swivelled = atContact || pose !== 'seated'
   useFrame((_, rawDelta) => {
     const g = ref.current
     if (!g) return
     const delta = Math.min(rawDelta, 0.1)
-    const spot = standing ? STANDING : SEATED
-    easing.damp3(g.position, spot.position, 0.45, delta)
-    easing.dampAngle(g.rotation, 'y', spot.yaw, 0.45, delta)
+    const spot = swivelled ? SWIVELLED : AT_DESK
+    easing.damp3(g.position, spot.position, 0.4, delta)
+    easing.dampAngle(g.rotation, 'y', spot.yaw, 0.4, delta)
   })
   return (
     <group ref={ref}>
-      <Avatar mode={standing ? 'stand' : 'desk'} />
+      <Chair />
+      <Avatar mode={atContact ? 'stand' : 'desk'} />
     </group>
   )
 }
@@ -148,7 +157,6 @@ export function Workspace(props: ThreeElements['group']) {
   return (
     <group {...props}>
       <Desk />
-      <Chair />
       <Laptop />
       <Mouse />
       <AvatarRig />
