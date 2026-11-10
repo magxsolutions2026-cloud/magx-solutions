@@ -34,6 +34,9 @@ function Lights() {
         shadow-camera-bottom={-1}
         shadow-bias={-0.0005}
       />
+      {/* Portrait light from the contact camera's side: the standing avatar faces -x,
+          away from the key light, and would otherwise be a silhouette. */}
+      <directionalLight position={[-4, 3.2, 2.4]} intensity={1.7} color="#fff3e6" />
       {/* Cool rim light from behind for silhouette separation against the dark */}
       <directionalLight position={[-3, 2.5, -4]} intensity={1.1} color="#4cc2ff" />
       {/* Screen bounce onto the avatar's face */}
