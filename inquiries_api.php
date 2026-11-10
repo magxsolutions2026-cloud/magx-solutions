@@ -69,4 +69,4 @@ if (empty($mailResult['success'])) {
     error_log('MAGX inquiry alert: ' . ($mailResult['message'] ?? 'unknown error'));
 }
 
-magx_json_response(['success' => true, 'message' => "Thanks! I'll get back to you within one business day."]);
+magx_json_response(['success' => true, 'message' => "Thanks! Your message is in — I'll get back to you by email."]);

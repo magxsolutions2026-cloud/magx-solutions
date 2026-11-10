@@ -18,7 +18,8 @@ export type Shot = { position: Vec3; target: Vec3; frameX?: number }
  */
 export const shots: Record<SectionId, Shot> = {
   hero: { position: [2.4, 1.6, 3.4], target: [0, 0.85, 0.15], frameX: 0.22 },
-  services: { position: [-4.2, 3.4, 6.2], target: [0.4, 0.7, 0] },
+  // Text-heavy section: rise and look out into the particle field, workspace out of frame.
+  services: { position: [-2.5, 5.5, 3], target: [-6, 6.5, -18] },
   work: { position: [0.6, 1.6, 4.5], target: [0, 1.4, -6] },
   testimonials: { position: [0, 4.5, 9], target: [0, 1.2, -4] },
   stack: { position: [3.5, 2.6, 7], target: [0, 1, -2] },
@@ -31,7 +32,7 @@ export const shots: Record<SectionId, Shot> = {
  */
 export const mobileShots: Partial<Record<SectionId, Shot>> = {
   // Look above the avatar so it sits in the lower half, under the stacked headline.
-  hero: { position: [1.3, 2.3, 5.8], target: [0, 2.15, 0] },
+  hero: { position: [1.3, 2.6, 5.6], target: [0, 2.55, 0] },
   contact: { position: [-0.6, 1.5, 4.6], target: [0, 1.1, 0] },
   work: { position: [0, 1.6, 6], target: [0, 1.4, -6] },
 }

@@ -1,9 +1,18 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { initSmoothScroll } from './lib/gsap'
 import { useActiveSection } from './hooks/useActiveSection'
+import { usePublicContent } from './hooks/usePublicContent'
+import { useReveal } from './hooks/useReveal'
+import { useUiStore } from './store/uiStore'
 import { SceneErrorBoundary } from './components/SceneErrorBoundary'
 import { Section } from './components/Section'
+import { BookingDialog } from './components/BookingDialog'
 import { Navbar } from './sections/Navbar'
+import { Hero } from './sections/Hero'
+import { Services } from './sections/Services'
+import { Proof } from './sections/Proof'
+import { TechStack } from './sections/TechStack'
+import { Footer } from './sections/Footer'
 
 // three.js + R3F load in their own chunk, after the HTML shell is interactive.
 const SceneCanvas = lazy(() => import('./canvas/SceneCanvas'))
@@ -11,6 +20,9 @@ const SceneCanvas = lazy(() => import('./canvas/SceneCanvas'))
 export default function App() {
   useEffect(() => initSmoothScroll(), [])
   useActiveSection()
+  const { services, loaded } = usePublicContent()
+  useReveal([loaded])
+  const openBooking = useUiStore((s) => s.openBooking)
 
   return (
     <>
@@ -25,20 +37,35 @@ export default function App() {
       </a>
       <Navbar />
 
-      {/* Phase 3–5 replace these stubs with the designed sections. */}
       <main id="main">
-        <Section id="hero" className="flex min-h-dvh flex-col justify-start pt-32 md:justify-center md:pt-28">
-          <p className="eyebrow mb-6">MAGX Solutions — Freelance developer</p>
-          <h1 className="max-w-[11ch] font-display text-6xl font-black leading-[0.88] tracking-tight [font-stretch:120%] md:text-8xl">
-            Software that moves your business.
-          </h1>
+        <Section id="hero" padded={false}>
+          <Hero />
         </Section>
-        <Section id="services" eyebrow="01 — Services" title="Services" className="min-h-dvh" />
+        <Section id="services">
+          <Services services={services} />
+        </Section>
+        {/* Phase 4: interactive 3D project deck */}
         <Section id="work" eyebrow="02 — Selected work" title="Work" className="min-h-dvh" />
-        <Section id="testimonials" eyebrow="03 — Clients" title="Testimonials" scene="off" className="min-h-dvh" />
-        <Section id="stack" eyebrow="04 — Stack" title="Tech stack" scene="off" className="min-h-dvh" />
-        <Section id="contact" eyebrow="05 — Contact" title="Let's work together" className="min-h-dvh" />
+        <Section id="testimonials" scene="off">
+          <Proof />
+        </Section>
+        <Section id="stack" scene="off">
+          <TechStack />
+        </Section>
+        {/* Phase 5: glass contact form beside the avatar */}
+        <Section id="contact" eyebrow="05 — Contact" title="Let's work together" className="min-h-dvh">
+          <button
+            type="button"
+            onClick={() => openBooking()}
+            className="mt-10 rounded-full bg-volt px-7 py-4 font-semibold text-ink"
+          >
+            Book a consultation
+          </button>
+        </Section>
       </main>
+      <Footer />
+
+      <BookingDialog serviceOptions={services.map((s) => s.title)} />
     </>
   )
 }

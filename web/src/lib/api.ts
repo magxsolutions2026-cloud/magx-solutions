@@ -29,6 +29,7 @@ type ApiResponse<T> = {
   message?: string
   data?: T
   errors?: Record<string, string>
+  [key: string]: unknown
 }
 
 export class ApiError extends Error {
@@ -83,4 +84,34 @@ export type InquiryInput = {
 export async function submitInquiry(input: InquiryInput): Promise<string> {
   const json = await post<never>('inquiries_api.php', { action: 'SUBMIT', ...input })
   return json.message ?? 'Message sent.'
+}
+
+export type Slot = {
+  value: string
+  label: string
+  is_available: boolean
+  remaining: number
+}
+
+/** Bookable slots for a date (YYYY-MM-DD) from the existing appointment system. */
+export async function fetchSlots(date: string): Promise<{ slots: Slot[]; timezone: string }> {
+  // appointments_api.php returns slots at the top level, not under `data`.
+  const json = await post<never>('appointments_api.php', { action: 'AVAILABLE_SLOTS', date })
+  return { slots: (json.slots as Slot[]) ?? [], timezone: String(json.timezone ?? '') }
+}
+
+export type AppointmentInput = {
+  full_name: string
+  email: string
+  phone: string
+  preferred_date: string
+  preferred_time: string
+  service_type: string
+  notes: string
+}
+
+/** Creates a pending appointment; the admin approves it from the existing admin panel. */
+export async function submitAppointment(input: AppointmentInput): Promise<string> {
+  const json = await post<never>('appointments_api.php', { action: 'SUBMIT', ...input })
+  return json.message ?? 'Request sent.'
 }
