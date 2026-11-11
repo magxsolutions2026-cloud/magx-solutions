@@ -8450,7 +8450,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	            $("#contact").on("click", function(){ showMain("portfolio"); });
 
 	            // Hero CTAs
-	            $("#heroPortfolio").on("click", function(){ $("#contact").trigger("click"); });
+	            $("#heroPortfolio").on("click", function(){ window.location.href = "/site/"; });
 	            $("#heroExplore").on("click", function(){ $("#services").trigger("click"); });
 	            $("#heroConsult").on("click", function(){
 	                if (window.openAppointmentBooking) {
