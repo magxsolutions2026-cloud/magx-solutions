@@ -8,7 +8,7 @@
   "routes": [
     {
       "src": "^/$",
-      "dest": "/site/index.html"
+      "dest": "/api/index.php"
     },
     {
       "src": "^/index\\.php$",
@@ -63,11 +63,15 @@
       "status": 404
     },
     {
+      "src": "^/site/?$",
+      "dest": "/site/index.html"
+    },
+    {
       "handle": "filesystem"
     },
     {
       "src": "^/(.*)$",
-      "dest": "/site/index.html"
+      "dest": "/api/index.php"
     }
   ]
 }
