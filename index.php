@@ -8447,7 +8447,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string)$_SERVER['REQUEST_ME
 	
 	            $("#services").on("click", function(){ showMain("services"); });
 	
-	            $("#contact").on("click", function(){ showMain("portfolio"); });
+	            $("#contact").on("click", function(){ window.location.href = "/site/"; });
 
 	            // Hero CTAs
 	            $("#heroPortfolio").on("click", function(){ window.location.href = "/site/"; });
