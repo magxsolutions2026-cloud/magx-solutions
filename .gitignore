@@ -7,3 +7,4 @@ vendor/
 # React frontend build output (built on Vercel from web/)
 /site/
 *.tsbuildinfo
+/public/
